@@ -28,12 +28,12 @@
                     </tr>
                 <?php endif; ?>
 
-            <?php if (tableExists('{{tokens_'.$thissurvey['sid'].'}}')) //Give entry field for token id
+            <?php if ($oSurvey->hasTokensTable) //Give entry field for token id
             { ?>
                 <tr>
                 <td valign='top' width='1%'></td>
                 <td valign='top' align='right' width='30%'><font color='red'>*</font>
-                    <strong><?php echo gT("Token",'html',$sDataEntryLanguage); ?>:</strong>
+                    <strong><?php echo gT("Access code",'html',$sDataEntryLanguage); ?>:</strong>
                 </td>
                 <td valign='top'  align='left' style='padding-left: 20px'>
                 <input type='text' id='token' name='token' oninput='activateSubmit(this);' />

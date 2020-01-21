@@ -1,19 +1,17 @@
 <?php
     App()->getClientScript()->registerPackage('jquery-nestedSortable');
-    $oAdminTheme = AdminTheme::getInstance();
-    $oAdminTheme->registerScriptFile( 'ADMIN_SCRIPT_PATH', 'organize.js');    
-    $oAdminTheme->registerCssFile( 'PUBLIC', 'organize.css' );
+    App()->getClientScript()->registerScriptFile( App()->getConfig('adminscripts') . 'organize.js', LSYii_ClientScript::POS_BEGIN);
+    App()->getClientScript()->registerCssFile(Yii::app()->getConfig('publicstyleurl') . 'organize.css');
 ?>
 
 <div id='edit-survey-text-element' class='side-body <?php echo getSideBodyClass(true); ?>'>
-        <?php $this->renderPartial('/admin/survey/breadcrumb', array('oSurvey'=>$oSurvey, 'active'=>gT('Organize question groups/questions'))); ?>
-        <h3><?php eT('Organize question groups/questions');?></h3>
+        <h3><?php eT('Organize question group/questions');?></h3>
         <div class='row'>
             <div class='col-sm-8'>
                 <p class='alert alert-info'>
                     <span class='fa fa-info-circle'></span>&nbsp;
                     <?php eT("To reorder questions/questiongroups just drag the question/group with your mouse to the desired position.");?>
-                    <?php eT("After you are done please click the 'Save' button to save your changes.");?>
+                    <?php eT("After you are done, please click the 'Save' button to save your changes.");?>
                 </p>
             </div>
             <div class='col-sm-4'>
@@ -32,7 +30,7 @@
                     <div class="panel-heading">
                         <a class='btn btn-default btn-xs disclose'><span title="Click to show/hide children" class="caret"></span></a>
                         &nbsp;
-                        <?php echo flattenText($aGroupAndQuestions['group_name'],true);?>
+                        <?php echo flattenText($aGroupAndQuestions['gid'],true);?>
                     </div>
                         <?php if (isset ($aGroupAndQuestions['questions']))
                             {?>

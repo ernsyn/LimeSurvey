@@ -4,19 +4,133 @@ namespace ls\tests;
 
 use PHPUnit\Framework\TestCase;
 
-class TestBaseClass extends \PHPUnit_Framework_TestCase
+class TestBaseClass extends TestCase
 {
     /**
      * @var TestHelper
      */
     protected static $testHelper = null;
 
-    public function __construct()
+    /** @var  string $tempFolder*/
+    protected static $tempFolder;
+
+    /** @var  string $screenshotsFolder */
+    protected static $screenshotsFolder;
+
+    /** @var  string $surveysFolder */
+    protected static $surveysFolder;
+
+    /** @var  string $dataFolder */
+    protected static $dataFolder;
+
+    /** @var  string $viewsFolder */
+    protected static $viewsFolder;
+
+    /** @var  \Survey */
+    protected static $testSurvey;
+
+    /** @var  integer */
+    protected static $surveyId;
+
+    public static function setUpBeforeClass()
     {
+        parent::setUpBeforeClass();
+
+        // Clear database cache.
+        \Yii::app()->db->schema->refresh();
+
+        //$lt = ini_get('session.gc_maxlifetime');
+        //var_dump('gc_maxlifetime = ' . $lt);
+        //die;
+
+        // This did not fix the langchang test failure on Travis.
+        //session_destroy();
+        //session_start();
+
         self::$testHelper = new TestHelper();
 
+        self::$dataFolder = __DIR__.'/data';
+        self::$viewsFolder = self::$dataFolder."/views";
+        self::$surveysFolder = self::$dataFolder.'/surveys';
+        self::$tempFolder = __DIR__.'/tmp';
+        self::$screenshotsFolder = self::$tempFolder.'/screenshots';
         self::$testHelper->importAll();
 
-        parent::__construct();
+        \Yii::import('application.helpers.globalsettings_helper', true);
+    }
+
+    /**
+     * @param string $fileName
+     * @return void
+     */
+    protected static function importSurvey($fileName)
+    {
+        \Yii::app()->session['loginID'] = 1;
+        $surveyFile = $fileName;
+        if (!file_exists($surveyFile)) {
+            throw new \Exception(sprintf('Survey file %s not found',$surveyFile));
+        }
+
+        $translateLinksFields = false;
+        $newSurveyName = null;
+        $result = \importSurveyFile(
+            $surveyFile,
+            $translateLinksFields,
+            $newSurveyName,
+            null
+        );
+        if ($result) {
+            self::$testSurvey = \Survey::model()->findByPk($result['newsid']);
+            self::$surveyId = $result['newsid'];
+        } else {
+            throw new \Exception(sprintf('Failed to import survey file %s',$surveyFile));
+        }
+    }
+
+	/**
+	 * Get all question inside current survey, key is question code
+	 * @return array[]
+	 */
+	public function getAllSurveyQuestions()
+	{
+		if(empty(self::$surveyId)) {
+			throw new \Exception('getAllSurveyQuestions call without survey.');
+		}
+        $survey = \Survey::model()->findByPk(self::$surveyId);
+		if(empty($survey)) {
+			throw new \Exception('getAllSurveyQuestions call with an invalid survey.');
+		}
+        $questions = [];
+        foreach($survey->groups as $group) {
+            $questionObjects = $group->questions;
+            foreach ($questionObjects as $q) {
+                $questions[$q->title] = $q;
+            }
+        }
+        return $questions;
+	}
+
+    /**
+     * @return void
+     */
+    public static function tearDownAfterClass()
+    {
+        parent::tearDownAfterClass();
+
+        // Make sure we have permission to delete survey.
+        \Yii::app()->session['loginID'] = 1;
+
+        if (self::$testSurvey) {
+            if (!self::$testSurvey->delete()) {
+                self::assertTrue(
+                    false,
+                    'Fatal error: Could not clean up survey '
+                    . self::$testSurvey->sid
+                    . '; errors: '
+                    . json_encode(self::$testSurvey->errors)
+                );
+            }
+            self::$testSurvey = null;
+        }
     }
 }

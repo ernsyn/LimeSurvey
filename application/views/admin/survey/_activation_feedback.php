@@ -16,7 +16,7 @@
     <div class="row welcome survey-action">
         <div class="col-lg-12 content-right">
             <div class='jumbotron message-box'>
-                <h3><?php eT("Activate Survey");?>(<?php echo $iSurveyID; ?>)</h3>
+                <h3><?php eT("Activate Survey");?> (<?php echo $iSurveyID; ?>)</h3>
                 <p class='lead'>
                     <?php eT("Survey has been activated. Results table has been successfully created."); ?>
                 </p>
@@ -29,13 +29,14 @@
 
                 <?php if($allowregister && !tableExists('tokens_'.$iSurveyID)):?>
                     <p>
-                        <?php eT("This survey allows public registration. A token table must also be created."); ?>
+                        <?php eT("This survey allows public registration. A survey participants table must also be created."); ?>
                         <br />
                         <br />
                         <input
                             type="submit"
+                            class="btn btn-default btn-lg limebutton"
                             value="<?php eT("Initialise participant table"); ?>"
-                            onclick="<?php echo $onclickAction;?>"
+                            onclick='<?php echo $onclickAction;?>'
                             />
                     </p>
                     <?php else:?>
@@ -48,27 +49,27 @@
                             <strong><?php eT("Open-access mode:");?></strong>
                             <?php eT("No invitation code is needed to complete the survey."); ?>
                             <br />
-                            <?php eT("You can switch to the closed-access mode by initialising a token table with the button below."); ?>
+                            <?php eT("You can switch to the closed-access mode by initialising a survey participants table by using the button below."); ?>
                             <br />
                             <br />
                             <input
                                 type='submit'
                                 class='btn btn-default'
+                                id='activateTokenTable__selector--yes'
                                 value='<?php eT("Switch to closed-access mode"); ?>'
-                                onclick="<?php echo $closedOnclickAction;?>"
                                 />
                             <input
                                 type='submit'
                                 class='btn btn-default'
+                                id='activateTokenTable__selector--no'
                                 value='<?php eT("No, thanks."); ?>'
-                                onclick="<?php echo $noOnclickAction;?>"
                                 />
                             <?php else:?>
                             <input
                                 type='submit'
                                 class='btn btn-default'
+                                id='activateRedirectSurvey__selector'
                                 value='<?php eT("Back to survey home"); ?>'
-                                onclick="<?php echo $noOnclickAction;?>"
                                 />
 
                             <?php endif; ?>
@@ -79,3 +80,9 @@
         </div>
     </div>
 </div>
+
+<?php App()->getClientScript()->registerScript("ActivationFeedBackTriggers","
+$('#activateTokenTable__selector--yes').on('click', function(e){ var run=function(){".$closedOnclickAction."}; run();});
+$('#activateTokenTable__selector--no, #activateRedirectSurvey__selector').on('click', function(e){ var run=function(){".$noOnclickAction."}; run();});
+",LSYii_ClientScript::POS_POSTSCRIPT); 
+?>

@@ -9,14 +9,8 @@
  $sCointainerClass = ($oSurvey->anonymized != 'Y' ?  'yes-no-date-container' : 'yes-no-container');
 
 ?>
-<style>
-    input[type=text]:disabled,
-    input[type=email]:disabled{
-        color: transparent;
-    }
-</style>
 
-<form class="custom-modal-datas form form-horizontal">
+<form class="custom-modal-datas form form-horizontal makeDisabledInputsTransparent">
     <div id='updateTokens' >
             <!-- Tabs -->
             <?php if( count($attrfieldnames) > 0 ):?>
@@ -24,14 +18,14 @@
 
                     <!-- Common  -->
                     <li role="presentation" class="active">
-                        <a data-toggle="tab" href="#general" aria-expanded="true">
+                        <a data-toggle="tab" href="#massive-general" aria-expanded="true">
                             <?php eT('General'); ?>
                         </a>
                         </li>
 
                         <!-- Custom attibutes -->
                         <li role="presentation" class="">
-                            <a data-toggle="tab" href="#custom" aria-expanded="false">
+                            <a data-toggle="tab" href="#massive-custom" aria-expanded="false">
                                 <?php eT('Additional attributes'); ?>
                             </a>
                         </li>
@@ -40,7 +34,7 @@
 
             <!-- Tabs content-->
             <div class="tab-content">
-            <div id="general" class="tab-pane active fade in">
+            <div id="massive-general" class="tab-pane active fade in">
                 <div class="form-group">
                     <div class="col-sm-1">
                         <label class="" >
@@ -139,6 +133,19 @@
                     <label class="col-sm-3 control-label"  for='massedit_lastname'><?php eT("Last name:"); ?></label>
                     <div class="col-sm-8">
                         <input class='form-control custom-data selector_submitField' type='text' size='30'  id='massedit_lastname' name='lastname' value="lskeep" disabled />
+                    </div>
+                </div>
+
+                <!-- Language -->
+                <div class="form-group">
+                    <div class="col-sm-1">
+                        <label class="" >
+                            <input type="checkbox" class="action_check_to_keep_old_value"></input>
+                        </label>
+                    </div>
+                    <label class="col-sm-3 control-label"  for='massedit_language'><?php eT("Language:"); ?></label>
+                    <div class="col-sm-8">
+                        <?php echo CHtml::dropDownList('language', '', array_merge(array('lskeep'=>''), $aLanguages), array('id'=>'massedit_language', 'class'=>'form-control custom-data selector_submitField', 'disabled'=>'disabled')); ?>
                     </div>
                 </div>
                 
@@ -378,7 +385,7 @@
             </div>
 
             <!-- Custom attibutes -->
-            <div id="custom" class="tab-pane fade in">
+            <div id="massive-custom" class="tab-pane fade in">
                 <div class="form-group">
                     <div class="col-sm-1">
                         <label class="" >
@@ -404,14 +411,15 @@
                 <?php endforeach; ?>
             </div>
         </div>
-        <input type="hidden" id="sid" name="sid" class="custom-data" value="<?php echo $_GET['surveyid']; ?>" />
+        <input type="hidden" id="sid" name="sid" class="custom-data" value="<?php echo $iSurveyId; ?>" />
     </div>
 </form>
 
 
-<script>
+<?php App()->getClientScript()->registerScript("Tokens:MassActionUpdateView_Scripts", "
+
    var bindBSSwitch = function(formGroup){
-       console.log("bindBSSwitch run on:",formGroup);
+       console.log(\"bindBSSwitch run on:\",formGroup);
     //Script to update the completed settings
     formGroup.find('.YesNoSwitch').on('switchChange.bootstrapSwitch', function(e, state){
         
@@ -420,11 +428,13 @@
 
     });
    };
+
    var bindDatepicker = function(myFormGroup){
     myFormGroup.find('.action_datepickerUpdateHiddenField').on('change dp.change', function(){
         myFormGroup.find('.selector_submitField').val($(this).val());
     })
    }
+   var bindClicksInModal = function(){
     $('#email').on('keyup', function(){
         //Don't change emailstatus when it is still disabled
         if($('#emailstatus').prop('disabled')) return;
@@ -440,7 +450,7 @@
         var currentValue = !$(this).prop('checked');
         var myFormGroup = $(this).closest('.form-group');
         
-        $(this).closest('.form-group').find('input:not(.action_check_to_keep_old_value)').prop('disabled', currentValue)
+        $(this).closest('.form-group').find('input:not(.action_check_to_keep_old_value),select:not(.action_check_to_keep_old_value)').prop('disabled', currentValue)
 
         if($(this).closest('.form-group').find('.bootstrap-switch-container').length > 0){
             $(this).closest('.form-group').find('.bootstrap-switch-container input[type=checkbox]').bootstrapSwitch('disabled', currentValue);
@@ -454,6 +464,12 @@
             bindBSSwitch(myFormGroup);
             bindDatepicker(myFormGroup);
         }
+        
+    });
+};
+bindClicksInModal(); 
+$(document).on('actions-updated', function(){
+    bindClicksInModal(); 
+});
 
-    })
-</script>
+", LSYii_ClientScript::POS_END); ?>

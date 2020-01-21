@@ -1,4 +1,6 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php if (!defined('BASEPATH')) {
+    exit('No direct script access allowed');
+}
 /*
    * LimeSurvey
    * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
@@ -13,66 +15,95 @@
      *	Files Purpose: lots of common functions
 */
 
+/**
+ * Class Session
+ * Extend CActiveRecord and not LSActiveRecord to disable plugin event (session can be used a lot)
+ * 
+ * @property string $id Primary Key
+ * @property integer $expire
+ * @property string $data
+ */
 class Session extends CActiveRecord
 {
-	/**
-	 * Returns the static model of Session table
-	 *
-	 * @static
-	 * @access public
-     * @param string $class
-	 * @return CActiveRecord
-	 */
-	public static function model($class = __CLASS__)
-	{
-		return parent::model($class);
-	}
 
-	/**
-	 * Returns the setting's table name to be used by the model
-	 *
-	 * @access public
-	 * @return string
-	 */
-	public function tableName()
-	{
-		return '{{sessions}}';
-	}
+    /** @var mixed $dataBackup to reset $data after save */
+    private $dataBackup = null;
 
-	/**
-	 * Returns the primary key of this table
-	 *
-	 * @access public
-	 * @return string
-	 */
-	public function primaryKey()
-	{
-		return 'id';
-	}
-    
+    /**
+     * @inheritdoc
+     */
+    public function init()
+    {
+        $this->attachEventHandler("onBeforeSave", array($this, 'fixDataType'));
+        $this->attachEventHandler("onAfterSave", array($this, 'resetDataType'));
+    }
+    /**
+     * @inheritdoc
+     * @return Session
+     */
+    public static function model($class = __CLASS__)
+    {
+        /** @var self $model */
+        $model = parent::model($class);
+        return $model;
+    }
+
+    /** @inheritdoc */
+    public function tableName()
+    {
+        return '{{sessions}}';
+    }
+
+    /** @inheritdoc */
+    public function primaryKey()
+    {
+        return 'id';
+    }
+
+    /** @inheritdoc */
     public function afterFind()
     {
         $sDatabasetype = Yii::app()->db->getDriverName();
-        // MSSQL delivers hex data (except for dblib driver)
-        if($sDatabasetype=='sqlsrv' || $sDatabasetype=='mssql')
-        {
-            $this->data=$this->hexToStr($this->data); 
-        }
         // Postgres delivers a stream pointer
-        if (gettype($this->data)=='resource')
-        {
-            $this->data=stream_get_contents($this->data,-1,0); 
-        }        
+        if (gettype($this->data) == 'resource') {
+            $this->data = stream_get_contents($this->data, -1, 0);
+        }
         return parent::afterFind();
     }
 
-    private function hexToStr($hex){
-        $string='';
-        for ($i=0; $i < strlen($hex)-1; $i+=2){
-            $string .= chr( hexdec( $hex[$i].$hex[$i+1] ) );
+    /**
+     * Update data before saving
+     * @see \CDbHttpSession
+     * @return void
+     */
+    public function fixDataType()
+    {
+        $this->dataBackup = $this->data;
+        $db = $this->getDbConnection();
+        $dbType = $db->getDriverName();
+        switch($dbType) {
+            case 'sqlsrv':
+            case 'mssql':
+            case 'dblib':
+                $this->data=new CDbExpression('CONVERT(VARBINARY(MAX), '.$db->quoteValue($this->data).')');
+                break;
+            case 'pgsql':
+                $this->data=new CDbExpression($db->quoteValueWithType($this->data, PDO::PARAM_LOB)."::bytea");
+                break;
+            case 'mysql':
+                // Don't seems to need something
+            default:
+                // No update
         }
-        return $string;
     }
 
+    /**
+     * Reset data after saving
+     * @return void
+     */
+    public function resetDataType()
+    {
+        $this->data = $this->dataBackup;
+        $this->dataBackup = null;
+    }
 }
-?>

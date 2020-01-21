@@ -8,24 +8,52 @@
 
 $active = (isset($_GET['tab']))?$_GET['tab']:'create';
 
-?>
-<script type="text/javascript">
+App()->getClientScript()->registerScript("tab-survey-view-variables", "
     var jsonUrl = '';
     var sAction = '';
     var sParameter = '';
     var sTargetQuestion = '';
     var sNoParametersDefined = '';
-    var sAdminEmailAddressNeeded = '<?php  eT("If you are using token functions or notifications emails you need to set an administrator email address.",'js'); ?>'
+    var sAdminEmailAddressNeeded = '".gT("If you are using token functions or notifications emails you need to set an administrator email address.",'js')."'
     var sURLParameters = '';
     var sAddParam = '';
-</script>
+", LSYii_ClientScript::POS_BEGIN);
+$activeTab = Yii::app()->request->getParam('tab', 'create');
+
+switch($activeTab) {
+    case 'create':
+        $activeForm = 'addnewsurvey'; 
+        $label = '<i class="fa fa-save"></i>&nbsp;'.gT("Save");
+        break;
+    case 'import':
+        $activeForm = 'importsurvey'; 
+        $label = '<i class="fa fa-download"></i>&nbsp;'.gT('Import');
+        break;
+    case 'copy':
+        $activeForm = 'copysurveyform'; 
+        $label = '<i class="fa fa-copy"></i>&nbsp;'.gT('Copy');
+        break;
+}
+
+App()->getClientScript()->registerScript("tab-survey-view-tab-switch-conditions", "
+    $('#save-form-button').attr('data-form-id', '".$activeForm."');
+    $('#save-form-button').html('".$label."');
+    $('#create-import-copy-survey>li>a').on('show.bs.tab', function(e){
+        $('#save-form-button').attr('data-form-id', e.target.getAttribute('data-form-id'));
+        // NB: button-title is equal to tab title except for 'Create' -> 'Save'
+        $('#save-form-button').html($(e.target).data('button-title'));
+    });
+", LSYii_ClientScript::POS_POSTSCRIPT);
+?>
+
 
 <!-- Tabs -->
-<ul class="nav nav-tabs" id="edit-survey-text-element-language-selection">
+<ul class="nav nav-tabs" id="create-import-copy-survey">
 
     <!-- Create -->
     <li role="presentation" <?php if($active=='create'){echo 'class="active"';}?>>
-        <a data-toggle="tab" href='#general'>
+        <a role="tab" data-toggle="tab" data-button-title="<i class='fa fa-save'></i>&nbsp;<?= gT('Save'); ?>" data-form-id="addnewsurvey" href='#general'>
+            <i class="fa fa-plus-circle"></i>&nbsp;
             <?php  eT("Create"); ?>
         </a>
     </li>
@@ -34,14 +62,16 @@ $active = (isset($_GET['tab']))?$_GET['tab']:'create';
     <?php if ($action == "newsurvey"): ?>
         <!-- Import -->
         <li role="presentation" <?php if($active=='import'){echo 'class="active"';}?>>
-            <a data-toggle="tab" href="#import">
+            <a role="tab" data-toggle="tab" data-button-title=" <span class='icon-import '></span>&nbsp;<?= gT('Import'); ?>" data-form-id="importsurvey" href="#import">
+            <span class="icon-import text-success"></span>&nbsp;
                 <?php  eT("Import"); ?>
             </a>
         </li>
 
         <!-- Copy -->
         <li role="presentation" <?php if($active=='copy'){echo 'class="active"';}?>>
-            <a data-toggle="tab" href="#copy">
+            <a role="tab" data-toggle="tab" data-button-title="<i class='fa fa-copy'></i>&nbsp;<?= gT('Copy'); ?>" data-form-id="copysurveyform" href="#copy">
+                <i class="fa fa-copy"></i>&nbsp;
                 <?php  eT("Copy"); ?>
             </a>
         </li>
@@ -50,14 +80,14 @@ $active = (isset($_GET['tab']))?$_GET['tab']:'create';
 
         <!-- Panel integration -->
         <li role="presentation">
-            <a data-toggle="tab" href="#panelintegration">
+            <a role="tab" data-toggle="tab" href="#panelintegration">
                 <?php  eT("Panel integration"); ?>
             </a>
         </li>
 
         <!-- Resources -->
         <li role="presentation">
-            <a data-toggle="tab" href="#resources">
+            <a role="tab" data-toggle="tab" href="#resources">
                 <?php  eT("Resources"); ?>
             </a>
         </li>
@@ -65,7 +95,7 @@ $active = (isset($_GET['tab']))?$_GET['tab']:'create';
         <!-- Plugins -->
         <?php if(isset($pluginSettings)): ?>
             <li role="presentation">
-                <a data-toggle="tab" href="#pluginsettings">
+                <a role="tab" data-toggle="tab" href="#pluginsettings">
                     <?php  eT("Plugins"); ?>
                 </a>
             </li>

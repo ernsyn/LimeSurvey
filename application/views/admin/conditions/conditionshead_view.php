@@ -1,5 +1,4 @@
 <div class='side-body <?php echo getSideBodyClass(false); ?>'>
-    <?php $this->renderPartial('/admin/survey/breadcrumb', array('oQuestion'=>$oQuestion, 'active'=>gT("Conditions designer") )); ?>
     <h3>
         <?php eT("Conditions designer"); ?>
 
@@ -11,9 +10,9 @@
                 data-message='<?php eT('Are you sure you want to delete all conditions for this question?', 'js'); ?>'
                 data-onclick='(function() { document.getElementById("deleteallconditions").submit(); })'
                 class='btn btn-warning pull-right condition-header-button'
-                onclick='return false';
+                onclick='return false;'
             >
-                <span class="glyphicon glyphicon-trash"></span>
+                <span class="fa fa-trash"></span>
                 &nbsp;
                 <?php eT('Delete all conditions'); ?>
             </button>
@@ -25,13 +24,13 @@
                 class="btn btn-default pull-right condition-header-button"
                 data-toggle='modal'
                 data-target='#confirmation-modal'
-                data-message='<?php eT('Are you sure you want to renumber the scenarios with incremented numbers beginning from 1?', 'js'); ?>'
+                data-message='<?php eT('Are you sure you want to renumber the scenarios with incrementing numbers beginning from 1?', 'js'); ?>'
                 data-onclick='(function() { document.getElementById("toplevelsubaction").value="renumberscenarios"; document.getElementById("deleteallconditions").submit();})'
                 onclick='return false;'
             >
                 <span class="icon-renumber"></span>
                 &nbsp;
-                <?php eT("Renumber scenario automatically");?>
+                <?php eT("Renumber scenarios");?>
             </button>
         <?php endif; ?>
 
@@ -53,7 +52,8 @@
 
 
 <?php echo $conditionsoutput_action_error;?>
-<?php echo $javascriptpre;?>
+<?php App()->getClientScript()->registerScript("conditionshead_prepared_javascript", $javascriptpre, LSYii_ClientScript::POS_BEGIN);?>
+<?php App()->getClientScript()->registerScript("conditionshead_onrun_javascript", 'window.LS.doToolTip();', LSYii_ClientScript::POS_POSTSCRIPT);?>
 
 <!-- Modal for quick add -->
 <div id="quick-add-condition-modal" class="modal fade" role="dialog">

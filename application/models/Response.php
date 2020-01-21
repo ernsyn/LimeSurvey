@@ -1,5 +1,4 @@
 <?php
-
     /**
      * Relations
      * @property Token $token
@@ -7,55 +6,70 @@
      */
     abstract class Response extends Dynamic
     {
-
-        public function beforeDelete() {
-            if (parent::beforeDelete())
-            {
+        public function beforeDelete()
+        {
+            if (parent::beforeDelete()) {
                 $this->deleteFiles();
                 return true;
             }
             return false;
         }
-
         /**
          *
          * @param mixed $className Either the classname or the survey id.
          * @return Response
          */
-        public static function model($className = null) {
-            return parent::model($className);
+        public static function model($className = null)
+        {
+            /** @var self $model */
+            $model = parent::model($className);
+            return $model;
         }
-
         /**
          *
          * @param int $surveyId
          * @param string $scenario
          * @return Response Description
          */
-        public static function create($surveyId, $scenario = 'insert') {
+        public static function create($surveyId, $scenario = 'insert')
+        {
             return parent::create($surveyId, $scenario);
         }
 
         /**
-        * Get all files related to this response and (optionally) question ID.
-        * 
-        * @param integer $sQID The question ID - optional - Default 0
-        */
-        public function getFiles($sQID=0)
+         * Get all files related to this response and (optionally) question ID.
+         *
+         * @param int $qid
+         * @return array[]
+         */
+        public function getFiles($qid = null)
         {
-            $aConditions=array('sid' => $this->dynamicId,'type' => '|','language'=>getBaseLanguageFromSurveyID($this->dynamicId));
-            if ($sQID>0)
-            {
-                $aConditions['qid']=$sQID;
+            $survey = Survey::model()->findByPk($this->dynamicId);
+            $criteria = new CDbCriteria();
+            $criteria->compare('sid', $this->dynamicId);
+            $criteria->compare('type', Question::QT_VERTICAL_FILE_UPLOAD);
+            $criteria->compare('questionL10ns.language', $survey->language);
+            if ($qid !== null) {
+                $criteria->compare('t.qid', $qid);
             }
-            $aQuestions = Question::model()->findAllByAttributes($aConditions);
+
+            $questions = Question::model()->with('questionL10ns')->findAll($criteria);
             $files = array();
-            foreach ($aQuestions as $question)
-            {
-                $field = "{$question->sid}X{$question->gid}X{$question->qid}";
-                $data = json_decode(stripslashes($this->getAttribute($field)), true);
-                if (is_array($data))
-                {
+            foreach ($questions as $question) {
+                $field = $question->sid.'X'.$question->gid.'X'.$question->qid;
+                $data = json_decode(urldecode($this->getAttribute($field)), true);
+                if (is_array($data)) {
+                    /* adding the title and qid to fileinfo , see #14659 */
+                    $index = 0;
+                    $data = array_map( function($fileInfo) use (&$index, $question) {
+                        return array_merge($fileInfo, array(
+                            'question' => array(
+                                'title' => $question->title,
+                                'qid' => $question->qid,
+                            ),
+                            'index' => $index++,
+                        ));
+                    }, $data);
                     $files = array_merge($files, $data);
                 }
             }
@@ -69,19 +83,16 @@
          */
         public function getFilesAndSqga($sQID = 0)
         {
-            $aConditions=array('sid' => $this->dynamicId,'type' => '|','language'=>getBaseLanguageFromSurveyID($this->dynamicId));
-            if ($sQID>0)
-            {
-                $aConditions['qid']=$sQID;
+            $aConditions = array('sid' => $this->dynamicId, 'type' => '|', 'language'=>$this->survey->language);
+            if ($sQID > 0) {
+                $aConditions['qid'] = $sQID;
             }
             $aQuestions = Question::model()->findAllByAttributes($aConditions);
             $files = array();
-            foreach ($aQuestions as $question)
-            {
-                $field = "{$question->sid}X{$question->gid}X{$question->qid}";
+            foreach ($aQuestions as $question) {
+                $field = $question->sid.'X'.$question->gid.'X'.$question->qid;
                 $data = json_decode(stripslashes($this->getAttribute($field)), true);
-                if (is_array($data))
-                {
+                if (is_array($data)) {
                     $files[$field] = $data;
                 }
             }
@@ -89,17 +100,15 @@
         }
 
         /**
-         * Returns true if any uploaded file still exists
-         * on the filesystem.
+         * Returns true if any uploaded file still exists on the filesystem.
          * @return boolean
          */
-        public function someFileExists($sQID = 0)
+        public function someFileExists()
         {
-            $uploaddir = Yii::app()->getConfig('uploaddir') ."/surveys/{$this->dynamicId}/files/";
-            foreach ($this->getFiles($sQID) as $fileInfo)
-            {
+            $uploaddir = Yii::app()->getConfig('uploaddir')."/surveys/{$this->dynamicId}/files/";
+            foreach ($this->getFiles() as $fileInfo) {
                 $basename = basename($fileInfo['filename']);
-                if (file_exists($uploaddir . $basename)) {
+                if (file_exists($uploaddir.$basename)) {
                     return true;
                 }
             }
@@ -112,14 +121,12 @@
          */
         public function deleteFiles()
         {
-            $errors = [];
-            $uploaddir = Yii::app()->getConfig('uploaddir') ."/surveys/{$this->dynamicId}/files/";
-            foreach ($this->getFiles() as $fileInfo)
-            {
+            $errors = array();
+            $uploaddir = Yii::app()->getConfig('uploaddir')."/surveys/{$this->dynamicId}/files/";
+            foreach ($this->getFiles() as $fileInfo) {
                 $basename = basename($fileInfo['filename']);
-                $result = @unlink($uploaddir . $basename);
-                if (!$result)
-                {
+                $result = @unlink($uploaddir.$basename);
+                if (!$result) {
                     $errors[] = $fileInfo['filename'];
                 }
             }
@@ -131,18 +138,18 @@
          * Delete uploaded files for this response AND modify
          * response data to reflect all changes.
          * Keep comment and title of file, but remove name/filename.
-         * @return string[] Name of files that could not be removed.
+         * @return array Number of successfully moved files and names of files that could not be removed/failed
          */
         public function deleteFilesAndFilename()
         {
             $errors = array();
             $success = 0;
-            $uploaddir = Yii::app()->getConfig('uploaddir') ."/surveys/{$this->dynamicId}/files/";
+            $uploaddir = Yii::app()->getConfig('uploaddir')."/surveys/{$this->dynamicId}/files/";
             $filesData = $this->getFilesAndSqga();
             foreach ($filesData as $sgqa => $fileInfos) {
                 foreach ($fileInfos as $i => $fileInfo) {
                     $basename = basename($fileInfo['filename']);
-                    $fullFilename = $uploaddir . $basename;
+                    $fullFilename = $uploaddir.$basename;
 
                     if (file_exists($fullFilename)) {
                         $result = @unlink($fullFilename);
@@ -150,13 +157,13 @@
                             $errors[] = $fileInfo['filename'];
                         } else {
                             //$filesData[$sgqa][$i]['filename'] = 'deleted';
-                            $fileInfos[$i]['name'] = $fileInfo['name'] . sprintf(' (%s)', gT('deleted'));
+                            $fileInfos[$i]['name'] = $fileInfo['name'].sprintf(' (%s)', gT('deleted'));
                             $this->$sgqa = json_encode($fileInfos);
                             $result = $this->save();
                             if ($result) {
                                 $success++;
                             } else {
-                                $errors[] = 'Could not update filename info for file ' . $fileInfo['filename'];
+                                $errors[] = 'Could not update filename info for file '.$fileInfo['filename'];
                             }
                         }
                     } else {
@@ -168,7 +175,8 @@
             return array($success, $errors);
         }
 
-        public function delete($deleteFiles = false) {
+        public function delete($deleteFiles = false)
+        {
             if ($deleteFiles) {
                 $this->deleteFiles();
             }
@@ -176,27 +184,43 @@
         }
         public function relations()
         {
-            $t = $this->getTableAlias();
             $result = array(
-                'token' => array(self::BELONGS_TO, 'Token_' . $this->dynamicId, array('token' => 'token')),
-                'survey' =>  array(self::BELONGS_TO, 'Survey', '', 'on' => "sid = {$this->dynamicId}" )
+                'token' => array(self::BELONGS_TO, 'Token_'.$this->dynamicId, array('token' => 'token')),
+                'survey' =>  array(self::BELONGS_TO, 'Survey', '', 'on' => "sid = {$this->dynamicId}")
             );
             return $result;
         }
-
         public function tableName()
         {
-            return '{{survey_' . $this->dynamicId . '}}';
+            return '{{survey_'.$this->dynamicId.'}}';
         }
-
+        /**
+         * Get current surveyId for other model/function
+         * @return int
+         */
         public function getSurveyId() {
-            return $this->dynamicId;
+            return $this->getDynamicId();
         }
 
-        public function browse(){
+        public function browse()
+        {
+        }
+        public function search()
+        {
 
         }
-        public function search(){
-            
+
+        public static function getEncryptedAttributes($surveyid = 0){
+            $survey = Survey::model()->findByPk($surveyid);
+            $fieldmap = createFieldMap($survey, 'full', false, false, $survey->language);
+            $aAttributes = array();
+            foreach ($fieldmap as $field){
+                if (array_key_exists('encrypted', $field) &&  $field['encrypted'] == 'Y'){
+                    $aAttributes[] = $field['fieldname'];
+                }
+
+            }
+            return $aAttributes;
         }
+    
     }

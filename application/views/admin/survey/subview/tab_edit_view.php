@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @var $aTabTitles
  * @var $aTabContents
@@ -6,24 +7,40 @@
  * @var $surveyid
  * @var $surveyls_language
  */
- $count=0;
- ?>
-<ul class="nav nav-tabs" id="edit-survey-text-element-language-selection">
-    <?php foreach ($aTabTitles as $i=>$eachtitle):?>
-        <li role="presentation" class="<?php if($count==0) {echo "active"; }?>">
-            <a data-toggle="tab" href="#edittxtele-<?php echo $count; $count++; ?>">
-                <?php echo $eachtitle;?>
-            </a>
-        </li>
-    <?php endforeach;?>
-</ul>
 
-<br/>
+if (isset($data)) {
+    extract($data);
+}
 
-<div class="tab-content">
-<?php foreach ($aTabContents as $i=>$sTabContent):?>
-    <?php
-        echo $sTabContent;
-    ?>
-<?php endforeach; ?>
+if (isset($scripts)) {
+    echo $scripts;
+}
+
+ $cs = Yii::app()->getClientScript();
+ $cs->registerPackage('bootstrap-select2');
+
+$adminlang = Yii::app()->session['adminlang'];
+
+?>
+
+<div class="container-center">
+    <div id="advancedTextEditor">
+        <lsnexttexteditor
+            :languagelist="'<?= htmlentities(json_encode(array_merge(["" => ""], getLanguageDataRestricted(false, 'short')))); ?>'"
+            :languagename="'<?= getLanguageNameFromCode($oSurvey->language, false); ?>'"
+            :defaultlanguage="'<?= $adminlang; ?>'"
+        />
+    </div>
+    <div id="textEditLoader" class="ls-flex ls-flex-column align-content-center align-items-center">
+        <div class="ls-flex align-content-center align-items-center">
+            <div class="loader-advancedquestionsettings text-center">
+                <div class="contain-pulse animate-pulse">
+                    <div class="square"></div>
+                    <div class="square"></div>
+                    <div class="square"></div>
+                    <div class="square"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

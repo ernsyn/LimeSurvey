@@ -2,7 +2,7 @@
     <h4 class='condition-and-or-or'><span class='label label-default'> <?php echo $andOrOr; ?> </span></h4>
 <?php endif; ?>
 
-<?php echo CHtml::form(
+<?php echo TbHtml::form(
     $formAction,
     'post',
     array(
@@ -26,7 +26,7 @@
             <?php endif; ?>
 
             <td class='col-md-4 questionnamecol'>
-                <span><?php echo $name; ?></span>
+                <span><?php echo CHtml::encode($name); ?></span>
             </td>
             <td class='col-md-2 operatornametd'>
                 <span><?php echo $method[trim($row['method'])]; ?> </span>

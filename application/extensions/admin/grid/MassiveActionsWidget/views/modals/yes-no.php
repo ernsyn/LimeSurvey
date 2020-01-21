@@ -1,27 +1,17 @@
 <!-- Modal confirmation for <?php echo $aAction['action'];?> -->
-<div id="massive-actions-modal-<?php echo $aAction['action'];?>-<?php echo $key; ?>" class="modal fade" role="dialog" data-keepopen="<?php echo $aAction['keepopen'];?>">
+<div id="massive-actions-modal-<?php echo $this->gridid;?>-<?php echo $aAction['action'];?>-<?php echo $key; ?>" class="modal fade" role="dialog" data-keepopen="<?php echo $aAction['keepopen'];?>" data-show-selected="<?php if(isset($aAction['showSelected'])){echo $aAction['showSelected'];}else{ echo 'no'; }?>" data-selected-url="<?php if(isset($aAction['selectedUrl'])){ echo $aAction['selectedUrl'];}else{ echo '#'; }?>">
     <div class="modal-dialog">
         <!-- Modal content-->
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"><?php echo $aAction['sModalTitle']; ?></h4>
+                <div class="modal-title h4"><?php echo $aAction['sModalTitle']; ?></div>
             </div>
             <div class="modal-body">
                 <div class='modal-body-text'><?php echo $aAction['htmlModalBody']; ?></div>
-
-                <!-- the ajax loader -->
-                <div id="ajaxContainerLoading" >
-                    <p><?php eT('Please wait, loading data...');?></p>
-                    <div class="preloader loading">
-                        <span class="slice"></span>
-                        <span class="slice"></span>
-                        <span class="slice"></span>
-                        <span class="slice"></span>
-                        <span class="slice"></span>
-                        <span class="slice"></span>
-                    </div>
-                </div>
+                
+                <!-- shows list of selected items in the modal-->
+                <div class="selected-items-list"></div>
 
                 <?php if (isset($aAction['aCustomDatas'])):?>
                     <!--

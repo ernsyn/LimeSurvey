@@ -48,43 +48,39 @@ class ExportSurveyResultsService
      * @var array
      */
     protected $_exports;
-    
+
     /**
-    * Root function for any export results action
-    *
-    * @param mixed $iSurveyId
-    * @param mixed $sLanguageCode
-    * @param csv|doc|pdf|xls $sExportPlugin Type of export
-    * @param FormattingOptions $oOptions
-    * @param string $sFilter               
-    */
-    function exportSurvey($iSurveyId, $sLanguageCode, $sExportPlugin, FormattingOptions $oOptions, $sFilter = '')
+     * Root function for any export results action
+     *
+     * @param mixed $iSurveyId
+     * @param mixed $sLanguageCode
+     * @param string $sExportPlugin Type of export
+     * @param FormattingOptions $oOptions
+     * @param string $sFilter
+     * @return
+     * @throws Exception
+     */
+    function exportResponses($iSurveyId, $sLanguageCode, $sExportPlugin, FormattingOptions $oOptions, $sFilter = '')
     {
         //Do some input validation.
-        if (empty($iSurveyId))
-        {
+        if (empty($iSurveyId)) {
             safeDie('A survey ID must be supplied.');
         }
-        if (empty($sLanguageCode))
-        {
+        if (empty($sLanguageCode)) {
             safeDie('A language code must be supplied.');
         }
-        if (empty($oOptions))
-        {
+        if (empty($oOptions)) {
             safeDie('Formatting options must be supplied.');
         }
-        if (empty($oOptions->selectedColumns))
-        {
+        if (empty($oOptions->selectedColumns)) {
             safeDie('At least one column must be selected for export.');
         }
         //echo $oOptions->toString().PHP_EOL;
         $writer = null;
 
         $iSurveyId = sanitize_int($iSurveyId);
-        if ($oOptions->output=='display')
-        {
-            header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-            header("Pragma: public");
+        if ($oOptions->output == 'display') {
+            header("Cache-Control: must-revalidate, no-store, no-cache");
         }
         
         $exports = $this->getExports();
@@ -103,11 +99,11 @@ class ExportSurveyResultsService
         }
 
         $surveyDao = new SurveyDao();
-        $survey = $surveyDao->loadSurveyById($iSurveyId, $sLanguageCode);
+        $survey = $surveyDao->loadSurveyById($iSurveyId, $sLanguageCode, $oOptions);
         $writer->init($survey, $sLanguageCode, $oOptions);
-        $surveyDao->loadSurveyResults($survey, $oOptions->responseMinRecord, $oOptions->responseMaxRecord, $sFilter, $oOptions->responseCompletionState, $oOptions->selectedColumns);
         
-        $writer->write($survey, $sLanguageCode, $oOptions,true);
+        $surveyDao->loadSurveyResults($survey, $oOptions->responseMinRecord, $oOptions->responseMaxRecord, $sFilter, $oOptions->responseCompletionState, $oOptions->selectedColumns, $oOptions->aResponses);
+        $writer->write($survey, $sLanguageCode, $oOptions, true);
         $result = $writer->close();
         
         // Close resultset if needed
@@ -115,8 +111,7 @@ class ExportSurveyResultsService
             $survey->responses->close();
         }
         
-        if ($oOptions->output=='file')
-        {
+        if ($oOptions->output == 'file') {
             return $writer->filename;
         } else {
             return $result;

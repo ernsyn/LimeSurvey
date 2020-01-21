@@ -1,9 +1,9 @@
 <div class="col-lg-12 list-surveys">
-    <h3><?php eT("User group"); ?> : <?php echo $groupname; ?></h3>
+    <div class="pagetitle h3"><?php eT("User group"); ?> : <?php echo $groupname; ?></div>
 
     <div class="row">
         <div class="col-lg-12 content-right text-center">
-            <h4><?php eT("Group members"); ?></h4>
+            <div class="h4"><?php eT("Group members"); ?></div>
 
             <?php if(isset($groupfound)):?>
                 <strong><?php eT("Group description: ");?></strong>
@@ -54,7 +54,7 @@
                             { ?>
                                 <?php echo CHtml::form(array("admin/usergroups/sa/user/ugid/{$ugid}/action/remove"), 'post'); ?>
                                     <button  data-toggle="tooltip" data-placement="bottom" title="<?php eT('Delete');?>" type="submit" onclick='return confirm("<?php eT("Are you sure you want to delete this entry?","js");?>")' class="btn btn-default btn-xs ">
-                                        <span class="glyphicon glyphicon-trash text-warning"></span>
+                                        <span class="fa fa-trash text-warning"></span>
                                     </button>
                                     <input name='uid' type='hidden' value='<?php echo $currentuser["userid"]; ?>' />
                                 </form>
@@ -91,9 +91,7 @@
                                     <td align='center'>
                                         <div class="row">
                                             <div class="col-lg-8">
-                                                <select name='uid' class="form-control col-lg-4">
-                                                    <?php echo $useraddusers; ?>
-                                                </select>
+                                                <?php echo CHtml::dropDownList('uid','-1',$addableUsers,array('class'=>"form-control col-lg-4")); ?>
                                             </div>
                                             <div class="col-lg-4">
                                                 <input type='submit' value='<?php eT("Add user"); ?>' class="btn btn-default"/>

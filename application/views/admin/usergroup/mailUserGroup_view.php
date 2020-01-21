@@ -1,15 +1,15 @@
 <div class="col-lg-12 list-surveys">
-    <h3>
+    <div class="pagetitle h3">
         <?php eT("Mail to all Members"); ?>
-    </h3>
+    </div>
 
     <div class="row">
         <?php echo CHtml::form(array("admin/usergroups/sa/mail/ugid/{$ugid}"), 'post', array('class'=>'col-md-6 col-md-offset-3', 'id'=>'mailusergroup', 'name'=>'mailusergroup')); ?>
             <div class="form-group">
                 <label for='copymail'>
                     <?php eT("Send me a copy:"); ?>
+                    <input id='copymail' name='copymail' type='checkbox' class='checkboxbtn' value='1'  class="form-control"/>
                 </label>
-                <input id='copymail' name='copymail' type='checkbox' class='checkboxbtn' value='1'  class="form-control"/>
             </div>    
             <div class="form-group">
                 <label for='subject'>

@@ -1,3 +1,13 @@
+<?php
+/**
+ * @var $this AdminController
+ */
+
+// DO NOT REMOVE This is for automated testing to validate we see that page
+echo viewHelper::getViewTestTag('dataEntryView');
+
+?>
+
 <!-- content_view.php -->
 
 <!-- explanation -->
@@ -24,7 +34,7 @@
 
         <!-- question text -->
         <strong>
-            <?php echo $deqrow['question'];   // don't flatten if want to use EM.  However, may not be worth it as want dynamic relevance and question changes?>
+            <?php echo $deqrow->questionL10ns[$sDataEntryLanguage]->question;   // don't flatten if want to use EM.  However, may not be worth it as want dynamic relevance and question changes?>
         </strong>
     </td>
 
@@ -35,7 +45,7 @@
 
 
             //5 POINT CHOICE radio-buttons
-            case "5": ?>
+            case Question::QT_5_POINT_CHOICE: ?>
             <div class="col-sm-10">
                 <select name='<?php echo $fieldname; ?>' class='form-control'>
                     <option value=''><?php eT("No answer",'html',$sDataEntryLanguage); ?></option>
@@ -49,8 +59,7 @@
 
 
             //DATE
-            case "D":
-                //                            $qidattributes = getQuestionAttributeValues($deqrow['qid'], $deqrow['type']);
+            case Question::QT_D_DATE:
                 $dateformatdetails = getDateFormatDataForQID($qidattributes, $thissurvey);
                 ?>
             <div class="col-sm-10 has-feedback">
@@ -87,7 +96,7 @@
 
 
             //GENDER drop-down list
-            case "G": ?>
+            case Question::QT_G_GENDER_DROPDOWN: ?>
             <div class="col-sm-10">
                 <select name='<?php echo $fieldname; ?>'  class='form-control'>
                     <option selected='selected' value=''><?php eT("Please choose",'html',$sDataEntryLanguage); ?>..</option>
@@ -99,14 +108,14 @@
 
 
             //MULTIPLE SHORT TEXT
-            case "Q":
-            case "K": ?>
+            case Question::QT_Q_MULTIPLE_SHORT_TEXT:
+            case Question::QT_K_MULTIPLE_NUMERICAL_QUESTION: ?>
             <div class="col-sm-10">
                 <table>
                     <?php foreach ($dearesult as $dearow):?>
                         <tr>
                             <td align='right'>
-                                <?php echo $dearow['question']; ?>
+                                <?php echo $dearow->questionL10ns[$sDataEntryLanguage]->question; ?>
                             </td>
                             <td>
                                 <input type='text' name='<?php echo $fieldname.$dearow['title']; ?>' />
@@ -119,7 +128,7 @@
 
 
             // multi scale
-            case "1": ?>
+            case Question::QT_1_ARRAY_MULTISCALE: ?>
             <div class="col-sm-10">
                 <table>
                     <tr>
@@ -132,30 +141,28 @@
                     <?php foreach ($dearesult as $dearow):?>
                         <?php
                             // first scale
-                            $delquery = "SELECT * FROM {{answers}} WHERE qid={$deqrow['qid']} AND language='{$sDataEntryLanguage}' and scale_id=0 ORDER BY sortorder, code";
-                            $delresult = dbExecuteAssoc($delquery);
+                            $delresult = Answer::model()->findAll("qid={$deqrow['qid']} and scale_id=0");
                         ?>
                         <tr>
-                            <td><?php echo $dearow['question']; ?></td>
+                            <td><?php echo $dearow->questionL10ns[$sDataEntryLanguage]->question; ?></td>
                             <td>
                                 <div class="col-sm-10">
                                     <select name='<?php echo $fieldname.$dearow['title']; ?>#0'  class='form-control'>
                                         <option selected='selected' value=''><?php eT("Please choose..."); ?></option>
                                         <?php foreach ($delresult as $delrow): ?>
-                                            <option value='<?php echo $delrow['code']; ?>'><?php echo $delrow['answer']; ?></option>
+                                            <option value='<?php echo $delrow['code']; ?>'><?php echo $delrow->answerL10ns[$sDataEntryLanguage]->answer; ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
                             </td>
-                            <?php $delquery = "SELECT * FROM {{answers}} WHERE qid={$deqrow['qid']} AND language='{$sDataEntryLanguage}' and scale_id=1 ORDER BY sortorder, code";
-                            $delresult = dbExecuteAssoc($delquery); ?>
+                            <?php $delresult = Answer::model()->findAll("qid={$deqrow['qid']} and scale_id=1"); ?>
                             <td>
                                 <div class="col-sm-10">
                                     <select name='<?php echo $fieldname.$dearow['title']; ?>#1'  class='form-control'>
                                         <option selected='selected' value=''><?php eT("Please choose..."); ?></option>
                                         <?php foreach ($delresult as $delrow)
                                         { ?>
-                                            <option value='<?php echo $delrow['code']; ?>'><?php echo $delrow['answer']; ?></option>
+                                            <option value='<?php echo $delrow['code']; ?>'><?php echo $delrow->answerL10ns[$sDataEntryLanguage]->answer; ?></option>
                                             <?php } ?>
                                         </select>
                                     </div>
@@ -179,8 +186,8 @@
 
 
         //LIST drop-down/radio-button list
-        case "L":
-        case "!": ?>
+        case Question::QT_L_LIST_DROPDOWN:
+        case Question::QT_EXCLAMATION_LIST_DROPDOWN: ?>
         <div class="col-sm-10">
             <select name='<?php echo $fieldname; ?>'  class='form-control'>
                 <?php if ($defexists=="") { ?>
@@ -204,7 +211,7 @@
 
 
         //LIST WITH COMMENT drop-down/radio-button list + textarea
-        case "O":  ?>
+        case Question::QT_O_LIST_WITH_COMMENT:  ?>
         <div class="col-sm-10">
             <select name='<?php echo $fieldname; ?>'  class='form-control'>
                 <?php if ($defexists=="") { ?>
@@ -224,7 +231,7 @@
 
 
         //RANKING TYPE QUESTION
-        case "R": ?>
+        case Question::QT_R_RANKING_STYLE: ?>
         <div class="col-sm-10">
         <div id="question<?php echo $thisqid ?>" class="ranking-answers">
             <ul class="answers-list list-unstyled">
@@ -244,7 +251,7 @@
                 <?php
                     foreach ($answers as $ansrow)
                     {
-                        echo "\t<option value=\"".$ansrow['code']."\">".flattenText($ansrow['answer'])."</option>\n";
+                        echo "\t<option value=\"".$ansrow['code']."\">".flattenText($ansrow->answerL10ns[$sDataEntryLanguage]->answer)."</option>\n";
                     }
                 ?>
             </select>
@@ -259,15 +266,15 @@
         <div style="display:none">
         <?php foreach ($answers as $ansrow)
         {
-            echo "<div id=\"htmlblock-{$thisqid}-{$ansrow['code']}\">{$ansrow['answer']}</div>";
+            echo "<div id=\"htmlblock-{$thisqid}-{$ansrow['code']}\">{$ansrow->answerL10ns[$sDataEntryLanguage]->answer}</div>";
         }
         ?>
         </div>
         <script type='text/javascript'>
             <!--
             var aRankingTranslations = {
-                choicetitle: '<?php echo gT("Your Choices",'js') ?>',
-                ranktitle: '<?php echo gT("Your Ranking",'js') ?>'
+                choicetitle: '<?php echo gT("Your choices",'js') ?>',
+                ranktitle: '<?php echo gT("Your ranking",'js') ?>'
             };
             function checkconditions(){
                 // Some space so the EM won't kick in
@@ -283,17 +290,12 @@
 
 
         //Multiple choice checkbox (Quite tricky really!)
-        case "M": ?>
+        case Question::QT_M_MULTIPLE_CHOICE: ?>
         <div class="col-sm-10">
             <?php
             if ($deqrow['other'] == "Y") {$meacount++;}
 
-            /* This caused a regression in 2.5, BUT: code below ($mearesult->FetchRow())
-             * assumes that $mearesult sometimes could be an object,
-             * which is never true even in 2.06.
-             */
-            //if ($dcols > 0 && $meacount >= $dcols)
-            if (true)
+            if ($dcols > 0 && $meacount >= $dcols)
             {
                 $width=sprintf("%0d", 100/$dcols);
                 $maxrows=ceil(100*($meacount/$dcols)/100); //Always rounds up to nearest whole number
@@ -308,7 +310,7 @@
                                     $upto=0;
                             } ?>
                             <input type='checkbox' class='checkboxbtn' name='<?php echo $fieldname.$mearow['title']; ?>' id='answer<?php echo $fieldname.$mearow['title']; ?>' value='Y' />
-                            <label for='answer<?php echo $fieldname.$mearow['title']; ?>'><?php echo $mearow['question']; ?></label><br />
+                            <label for='answer<?php echo $fieldname.$mearow['title']; ?>'><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?></label><br />
                             <?php $upto++; ;
                             }
                             if ($deqrow['other'] == "Y")
@@ -317,33 +319,22 @@
                             <?php } ?>
                     </td></tr></table>
 
-            <?php }
-            else
-            {
-                if (is_object($mearesult))
-                {
-                    while ($mearow = $mearesult->FetchRow())
-                    { ?>
-                    <input type='checkbox' class='checkboxbtn' name='<?php echo $fieldname.$mearow['code']; ?>' id='answer<?php echo $fieldname.$mearow['code']; ?>' value='Y'
-                        <?php if ($mearow['default_value'] == "Y") {  ?>checked<?php } ?>
-                        /><label for='<?php $fieldname.$mearow['code']; ?>'><?php echo $mearow['answer']; ?></label><br />
-                    <?php }
-                    if ($deqrow['other'] == "Y")
-                    { ?>
-                    <?php eT("Other",'html',$sDataEntryLanguage); ?> <input type='text' name='<?php echo $fieldname; ?>other' />
-                    <?php }
-                }
-                else
-                {
-                    throw new CException("\$mearesult should be an object here");
-                }
+            <?php } else {
+                foreach ($mearesult as $mearow) { ?>
+                <input type='checkbox' class='checkboxbtn' name='<?php echo $fieldname.$mearow['title']; ?>' id='answer<?php echo $fieldname.$mearow['title']; ?>' value='Y'
+                    /><label for='<?php $fieldname.$mearow['title']; ?>'><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?></label><br />
+                <?php }
+                if ($deqrow['other'] == "Y")
+                { ?>
+                <?php eT("Other",'html',$sDataEntryLanguage); ?> <input type='text' name='<?php echo $fieldname; ?>other' />
+                <?php }
             }?>
         </div><?php
             break;
 
 
         //Language Switch
-        case "I":  ?>
+        case Question::QT_I_LANGUAGE:  ?>
         <div class="col-sm-10">
             <select name='<?php echo $fieldname; ?>'  class='form-control'>
                 <option value='' selected='selected'><?php eT("Please choose",'html',$sDataEntryLanguage); ?>..</option>
@@ -358,7 +349,7 @@
 
 
         //Multiple choice with comments checkbox + text
-        case "P":  ?>
+        case Question::QT_P_MULTIPLE_CHOICE_WITH_COMMENTS:  ?>
         <div class="col-lg-10">
             <table border='0'>
                 <?php foreach ($mearesult as $mearow)
@@ -366,7 +357,7 @@
                         <tr>
                             <td>
                                 <input type='checkbox' class='checkboxbtn' name='<?php echo $fieldname.$mearow['title']; ?>' value='Y'
-                                /><?php echo $mearow['question']; ?>
+                                /><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?>
                             </td>
 
                             <td>
@@ -388,7 +379,7 @@
             </table>
         </div>
         <?php break;
-        case "|": ?>
+        case Question::QT_VERTICAL_FILE_UPLOAD: ?>
 
         <div class="col-sm-10">
         <script type='text/javascript'>
@@ -461,7 +452,7 @@
 
 
         //NUMERICAL TEXT
-        case "N": ?>
+        case Question::QT_N_NUMERICAL: ?>
             <div class="col-sm-10">
             <?php
             if (isset($qidattributes['prefix']) && trim($qidattributes['prefix'][$sDataEntryLanguage]) != '') {
@@ -497,11 +488,11 @@
             }
             $title = gT('Only numbers may be entered in this field.');
 
-            echo $prefix; ?><input type='text' name='<?php echo $fieldname; ?>' size='<?php echo $tiwidth; ?>' title='<?php echo $title; ?>' <?php echo $maxlength; ?> onkeypress="return goodchars(event,'-0123456789<?php echo $acomma; ?>')" /><?php echo $suffix;
+            echo $prefix; ?><input type='text' name='<?php echo $fieldname; ?>' size='<?php echo $tiwidth; ?>' title='<?php echo $title; ?>' <?php echo $maxlength; ?> onkeypress="return window.LS.goodchars(event,'-0123456789<?php echo $acomma; ?>')" /><?php echo $suffix;
             echo '</div>';
             break;
 
-        case "S": //SHORT FREE TEXT
+        case Question::QT_S_SHORT_FREE_TEXT: //SHORT FREE TEXT
             ?>
             <div class="col-sm-10">
             <?php
@@ -534,7 +525,7 @@
             {
                 $sSeparator = getRadixPointData($thissurvey['surveyls_numberformat']);
                 $sSeparator = $sSeparator['separator'];
-                $numbersonly = 'onkeypress="return goodchars(event,\'-0123456789'.$sSeparator.'\')"';
+                $numbersonly = 'onkeypress="return window.LS.goodchars(event,\'-0123456789'.$sSeparator.'\')"';
             }
             else
             {
@@ -562,7 +553,7 @@
 
 
         //LONG FREE TEXT
-        case "T":
+        case Question::QT_T_LONG_FREE_TEXT:
         ?>
         <div class="col-sm-10">
         <?php
@@ -596,7 +587,7 @@
             <?php
             break;
 
-        case "U": //HUGE FREE TEXT
+        case Question::QT_U_HUGE_FREE_TEXT: //HUGE FREE TEXT
             if (trim($qidattributes['display_rows'])!='')
             {
                 $drows=$qidattributes['display_rows'];
@@ -624,7 +615,7 @@
             echo $prefix; ?><textarea name='<?php echo $fieldname; ?>' cols='<?php echo $tiwidth; ?>' rows='<?php echo $drows; ?>'></textarea><?php echo $suffix;
             break;
 
-        case "Y": //YES/NO radio-buttons
+        case Question::QT_Y_YES_NO_RADIO: //YES/NO radio-buttons
         ?>
         <div class="col-sm-10">
             <select name='<?php echo $fieldname; ?>'  class='form-control'>
@@ -637,14 +628,14 @@
 
 
         //ARRAY (5 POINT CHOICE) radio-buttons
-        case "A": ?>
+        case Question::QT_A_ARRAY_5_CHOICE_QUESTIONS: ?>
 
         <div class="col-sm-10">
             <table>
                 <?php foreach ($mearesult as $mearow)
                     { ?>
                         <tr>
-                            <td align='right'><?php echo $mearow['question']; ?></td>
+                            <td align='right'><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?></td>
                             <td>
                                 <select name='<?php echo $fieldname.$mearow['title']; ?>' class='form-control'>
                                     <option value=''><?php eT("Please choose",'html',$sDataEntryLanguage); ?>..</option>
@@ -662,13 +653,13 @@
 
 
         //ARRAY (10 POINT CHOICE) radio-buttons
-        case "B":  ?>
+        case Question::QT_B_ARRAY_10_CHOICE_QUESTIONS:  ?>
         <div class="col-sm-10">
         <table>
             <?php foreach ($mearesult as $mearow)
                 { ?>
                 <tr>
-                    <td align='right'><?php echo $mearow['question']; ?></td>
+                    <td align='right'><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?></td>
                     <td>
                         <select name='<?php echo $fieldname.$mearow['title']; ?>'  class='form-control'>
                             <option value=''><?php eT("Please choose",'html',$sDataEntryLanguage); ?>..</option>
@@ -686,14 +677,14 @@
 
 
         //ARRAY (YES/UNCERTAIN/NO) radio-buttons
-        case "C":
+        case Question::QT_C_ARRAY_YES_UNCERTAIN_NO:
         ?>
         <div class="col-sm-10">
         <table>
             <?php foreach ($mearesult as $mearow)
                 { ?>
                 <tr>
-                    <td align='right'><?php echo $mearow['question']; ?></td>
+                    <td align='right'><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?></td>
                     <td>
                         <select name='<?php echo $fieldname.$mearow['title']; ?>'  class='form-control'>
                             <option value=''><?php eT("Please choose",'html',$sDataEntryLanguage); ?>..</option>
@@ -711,14 +702,14 @@
         <?php
         //ARRAY (YES/UNCERTAIN/NO) radio-buttons
         break;
-        case "E":
+        case Question::QT_E_ARRAY_OF_INC_SAME_DEC_QUESTIONS:
         ?>
         <div class="col-sm-10">
             <table>
             <?php foreach ($mearesult as $mearow)
                 { ?>
                 <tr>
-                    <td align='right'><?php echo $mearow['question']; ?></td>
+                    <td align='right'><?php echo $mearow->questionL10ns[$sDataEntryLanguage]->question; ?></td>
                     <td>
                         <select name='<?php echo $fieldname.$mearow['title']; ?>'  class='form-control'>
                             <option value=''><?php eT("Please choose",'html',$sDataEntryLanguage); ?>..</option>
@@ -735,7 +726,7 @@
 
 
         //ARRAY (Multi Flexi)
-        case ":":
+        case Question::QT_COLON_ARRAY_MULTI_FLEX_NUMBERS:
             $labelcodes=array();
         ?>
         <div class="col-sm-10">
@@ -743,7 +734,7 @@
             <tr><td></td>
                 <?php foreach($lresult as $data)
                     { ?>
-                    <th><?php echo $data['question']; ?></th>
+                    <th><?php echo $data->questionL10ns[$sDataEntryLanguage]->question; ?></th>
                     <?php $labelcodes[]=$data['title'];
                     }
                 ?>
@@ -752,14 +743,14 @@
                 foreach ($mearesult as $mearow)
                 {
 
-                    if (strpos($mearow['question'],'|'))
+                    if (strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|'))
                     {
-                        $answerleft=substr($mearow['question'],0,strpos($mearow['question'],'|'));
-                        $answerright=substr($mearow['question'],strpos($mearow['question'],'|')+1);
+                        $answerleft=substr($mearow->questionL10ns[$sDataEntryLanguage]->question,0,strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|'));
+                        $answerright=substr($mearow->questionL10ns[$sDataEntryLanguage]->question,strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|')+1);
                     }
                     else
                     {
-                        $answerleft=$mearow['question'];
+                        $answerleft=$mearow->questionL10ns[$sDataEntryLanguage]->question;
                         $answerright='';
                 } ?>
 
@@ -791,14 +782,14 @@
 
 
         //ARRAY (Multi Flexi)
-        case ";": ?>
+        case Question::QT_SEMICOLON_ARRAY_MULTI_FLEX_TEXT: ?>
         <div class="col-sm-10">
         <table>
             <tr><td></td>
                 <?php $labelcodes=array();
                     foreach ($lresult as $data)
                     { ?>
-                    <th><?php echo $data['question']; ?></th>
+                    <th><?php echo $data->questionL10ns[$sDataEntryLanguage]->question; ?></th>
                     <?php $labelcodes[]=$data['title'];
                 } ?>
 
@@ -807,14 +798,14 @@
             <?php $i=0;
                 foreach ($mearesult as $mearow)
                 {
-                    if (strpos($mearow['question'],'|'))
+                    if (strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|'))
                     {
-                        $answerleft=substr($mearow['question'],0,strpos($mearow['question'],'|'));
-                        $answerright=substr($mearow['question'],strpos($mearow['question'],'|')+1);
+                        $answerleft=substr($mearow->questionL10ns[$sDataEntryLanguage]->question,0,strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|'));
+                        $answerright=substr($mearow->questionL10ns[$sDataEntryLanguage]->question,strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|')+1);
                     }
                     else
                     {
-                        $answerleft=$mearow['question'];
+                        $answerleft=$mearow->questionL10ns[$sDataEntryLanguage]->question;
                         $answerright='';
                     }
                 ?>
@@ -836,21 +827,21 @@
 
 
         //ARRAY (Flexible Labels)
-        case "F":
-        case "H": ?>
+        case Question::QT_F_ARRAY_FLEXIBLE_ROW:
+        case Question::QT_H_ARRAY_FLEXIBLE_COLUMN: ?>
         <div class="col-sm-10">
         <table>
             <?php  foreach ( $mearesult as $mearow)
                 {
 
-                    if (strpos($mearow['question'],'|'))
+                    if (strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|'))
                     {
-                        $answerleft=substr($mearow['question'],0,strpos($mearow['question'],'|'));
-                        $answerright=substr($mearow['question'],strpos($mearow['question'],'|')+1);
+                        $answerleft=substr($mearow->questionL10ns[$sDataEntryLanguage]->question,0,strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|'));
+                        $answerright=substr($mearow->questionL10ns[$sDataEntryLanguage]->question,strpos($mearow->questionL10ns[$sDataEntryLanguage]->question,'|')+1);
                     }
                     else
                     {
-                        $answerleft=$mearow['question'];
+                        $answerleft=$mearow->questionL10ns[$sDataEntryLanguage]->question;
                         $answerright='';
                     }
                 ?>
@@ -863,7 +854,7 @@
 
                             <?php foreach ($fresult as $frow)
                                 { ?>
-                                <option value='<?php echo $frow['code']; ?>'><?php echo $frow['answer']; ?></option>
+                                <option value='<?php echo $frow['code']; ?>'><?php echo $frow->answerL10ns[$sDataEntryLanguage]->answer; ?></option>
                                 <?php } ?>
                         </select>
                     </td>
@@ -875,7 +866,7 @@
         <?php break;
 } ?>
 
-<?php if ($deqrow['help']): ?>
+<?php if (!empty($deqrow->questionL10ns[$sDataEntryLanguage]->help)): ?>
     <div class="col-sm-1">
         <a href="#" onclick="javascript:alert('Question <?php echo $deqrow['title']; ?> Help: <?php echo $hh; ?>')" title="<?php eT('Help about this question','html',$sDataEntryLanguage); ?>" data-toggle="tooltip" data-placement="top">
             <span class="fa fa-question-circle"></span>

@@ -1,25 +1,25 @@
-<div class="col-lg-2 col-sm-3 rtl-no-left-margin <?php echo $offset; ?>">
-    <!-- TODO: rtl-no-left-margin is a hack to avoid offset on both sides. Real solution: Include RTL converted bootstrap. -->
-    <div class="panel panel-primary panel-clickable" id="panel-<?php echo $position; ?>"
-         data-url="<?php echo $url; ?>"<?php if ($external) {
-        echo ' data-target="_blank"';
-    } ?> >
+<div class="<?php echo $sizeClass; ?> ls-flex-column ls-panelboxes-panelbox text-primary" >
+    <div class="panel panel-primary panel-clickable ls-panelboxes-panelbox-inner selector__<?php echo CHtml::encode(str_replace(' ', '_', strtolower(strip_tags($title)))) ?>"
+        id="panel-<?php echo $position; ?>"
+        data-url="<?php echo CHtml::encode($url); ?>"
+        <?php if ($external): ?>
+            data-target="_blank"
+        <?php endif; ?>
+    >
         <div class="panel-heading">
-            <h3 class="panel-title"><?php eT($title); ?></h3>
+            <div class="panel-title h4"><?php echo viewHelper::filterScript(gT($title)); ?></div>
         </div>
         <div class="panel-body">
             <div class="panel-body-ico">
-                <a href="<?php echo $url; ?>"<?php if ($external) {
-                    echo ' target="_blank"';
-                } ?>>
-                <span class="icon-<?php echo $ico; ?>" style="font-size: 4em">
+                <span class="sr-only"><?php echo viewHelper::filterScript(gT($title)); ?></span>
+                <span class="<?php echo CHtml::encode($ico); ?>" style="font-size: 4em">
                 </span>
-                </a>
             </div>
             <div class="panel-body-link">
-                <a href="<?php echo $url; ?>"<?php if ($external) {
-                    echo ' target="_blank"';
-                } ?>><?php eT($description); ?></a>
+                <?php echo viewHelper::filterScript(gT($description)); ?>
+                <?php if ($external): ?>
+                    &nbsp;<i class="fa fa-external-link"></i>
+                <?php endif; ?>
             </div>
         </div>
     </div>

@@ -1,44 +1,134 @@
 <?php
 
-namespace ls\menu;
+namespace LimeSurvey\Menu;
 
 class Menu implements MenuInterface
 {
-  protected $isDropDown = false;
-  protected $label = "Missing label";
-  protected $href = "#";
-  protected $menuItems = array();
+    /**
+     * If true, render this menu as a dropdown.
+     * @var boolean
+     */
+    protected $isDropDown = false;
 
-  /**
-   * @param array $options - Options for either dropdown menu or plain link
-   * @return ExtraMenu
-   */
-  public function __construct($options)
-  {
-      if (isset($options['isDropDown']))
-      {
-          $this->isDropDown = $options['isDropDown'];
-      }
+    /**
+     * @var string
+     */
+    protected $label = "Missing label";
 
-      if (isset($options['label']))
-      {
-          $this->label = $options['label'];
-      }
+    /**
+     * @var string
+     */
+    protected $href = "#";
 
-      if (isset($options['href']))
-      {
-          $this->href = $options['href'];
-      }
+    /**
+     * @var MenuItem[]
+     */
+    protected $menuItems = [];
 
-      if (isset($options['menuItems']))
-      {
-          $this->menuItems = $options['menuItems'];
-      }
-  }
+    /**
+     * Font-awesome icon class.
+     * @var string
+     */
+    protected $iconClass = "";
 
-  public function isDropDown() { return $this->isDropDown; }
-  public function getLabel() { return $this->label; }
-  public function getHref() { return $this->href; }
-  public function getMenuItems() { return $this->menuItems; }
+    /**
+     * @var string
+     */
+    protected $onClick = "";
+
+    /**
+     * @var string
+     */
+    protected $tooltip = "";
+
+    /**
+     * @param array $options - Options for either dropdown menu or plain link
+     * @return void
+     */
+    public function __construct($options)
+    {
+        if (isset($options['isDropDown'])) {
+            $this->isDropDown = $options['isDropDown'];
+        }
+
+        if (isset($options['label'])) {
+            $this->label = $options['label'];
+        }
+
+        if (isset($options['href'])) {
+            $this->href = $options['href'];
+        }
+
+        if (isset($options['menuItems'])) {
+            $this->menuItems = $options['menuItems'];
+        }
+
+        if (isset($options['iconClass'])) {
+            $this->iconClass = $options['iconClass'];
+        }
+
+        if (isset($options['onClick'])) {
+            $this->onClick = $options['onClick'];
+        }
+
+        if (isset($options['tooltip'])) {
+            $this->tooltip = $options['tooltip'];
+        }
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isDropDown()
+    {
+        return $this->isDropDown;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getHref()
+    {
+        return $this->href;
+    }
+    
+    /**
+     * @return MenuItem[]
+     */
+    public function getMenuItems()
+    {
+        return $this->menuItems;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getIconClass()
+    {
+        return $this->iconClass;
+    }
+
+    /**
+     * @return string
+     */
+    public function getOnClick()
+    {
+        return $this->onClick;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTooltip()
+    {
+        return $this->tooltip;
+    }
 }
-

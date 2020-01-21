@@ -1,13 +1,13 @@
 <?php
 
-echo '<link rel="stylesheet" type="text/css" href="' . getTemplateURL(Yii::app()->getConfig('defaulttemplate')) . '/print_template.css" />';
+echo '<link rel="stylesheet" type="text/css" href="' . getTemplateURL(getGlobalSetting('defaulttheme')) . '/print_template.css" />';
 
 echo $surveydesc . "<br />";
 echo $welcome . "<br /><br />";
 
 echo $numques;
 
-while (list ($key, $val) = each($survey_output))
+foreach ($survey_output as $key => $val)
 {
     if ($key == "GROUPS")
     {

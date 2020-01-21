@@ -1,4 +1,6 @@
-<?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
+<?php if (!defined('BASEPATH')) {
+    exit('No direct script access allowed');
+}
 /*
    * LimeSurvey
    * Copyright (C) 2013 The LimeSurvey Project Team / Carsten Schmitz
@@ -10,96 +12,90 @@
    * other free or open source software licenses.
    * See COPYRIGHT.php for copyright notices and details.
    *
-     *	Files Purpose: lots of common functions
 */
 
+/**
+ * Class DefaultValue
+ *
+ * @property integer $dvid primary key
+ * @property integer $qid The question id
+ * @property integer $scale_id Scale of question
+ * @property string $specialtype of column “other” currently (no GUI for comments)
+ *
+ * @property Question $question
+ * 
+ * @property DefaultValueL10n[] $defaultvalueL10ns
+ */
 class DefaultValue extends LSActiveRecord
 {
     /* Default value when create (from DB) , leave some because add rules */
-    public $specialtype='';
-    public $scale_id='';
-    public $sqid=0;
-    public $language='';// required ?
+    public $specialtype = '';
+    public $scale_id = '';
+    public $sqid = 0;
 
     /**
-     * Returns the static model of Settings table
-     *
-     * @static
-     * @access public
-     * @param string $class
-     * @return CActiveRecord
+     * @inheritdoc
+     * @return DefaultValue
      */
     public static function model($class = __CLASS__)
     {
-        return parent::model($class);
+        /** @var self $model */
+        $model = parent::model($class);
+        return $model;
     }
 
-    /**
-     * Returns the setting's table name to be used by the model
-     *
-     * @access public
-     * @return string
-     */
+    /** @inheritdoc */
     public function tableName()
     {
         return '{{defaultvalues}}';
     }
 
-    /**
-     * Returns the primary key of this table
-     *
-     * @access public
-     * @return string[]
-     */
+    /** @inheritdoc */
     public function primaryKey()
     {
-        return array('qid', 'specialtype', 'scale_id', 'sqid', 'language');
+        return array('dvid');
     }
 
-    /**
-    * Relations with questions
-    *
-    * @access public
-    * @return array
-    */
+    /** @inheritdoc */
     public function relations()
     {
         $alias = $this->getTableAlias();
         return array(
-            'question' => array(self::HAS_ONE, 'Question', '',
-            'on' => "$alias.qid = question.qid",
-            ),
+            'question' => array(self::HAS_ONE, 'Question', "qid"),
+            'defaultValueL10ns' => array(self::HAS_MANY, 'DefaultValueL10n', 'dvid')
         );
     }
-    /**
-    * Returns this model's validation rules
-    *
-    */
+
+    /** @inheritdoc */
     public function rules()
     {
         return array(
             array('qid', 'required'),
-            array('qid', 'numerical','integerOnly'=>true),
-            array('qid', 'unique', 'criteria'=>array(
-                    'condition'=>'specialtype=:specialtype and scale_id=:scale_id and sqid=:sqid and language=:language',
-                    'params'=>array(
-                        ':specialtype'=>$this->specialtype,
-                        ':scale_id'=>$this->scale_id,
-                        ':sqid'=>$this->sqid,
-                        ':language'=>$this->language,
-                    )
-                ),
-                'message'=>'{attribute} "{value}" is already in use.'),
+            array('qid,sqid,scale_id', 'numerical', 'integerOnly'=>true),
+            array('defaultvalue', 'LSYii_Validators'),
         );
     }
-    function insertRecords($data)
+
+    /**
+     * @param $data
+     * @return bool
+     * @deprecated at 2018-02-03 use $model->attributes = $data && $model->save()
+     */
+    public function insertRecords($data)
     {
         $oRecord = new self;
-        foreach ($data as $k => $v)
+        foreach ($data as $k => $v) {
             $oRecord->$k = $v;
-        if($oRecord->validate())
+        }
+        if ($oRecord->validate()) {
             return $oRecord->save();
+        }
         tracevar($oRecord->getErrors());
     }
+    /*
+    public function getDefaultValue($language = 'en')
+    {
+        $oDefaultValue = $this->with('defaultValueL10ns')->find('language = :language', array(':language' => $language));
+        return $oDefaultValue->defaultValueL10ns[$language]->defaultvalue;
+    }*/
 }
-?>

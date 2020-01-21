@@ -1,4 +1,12 @@
-<h3 class="pagetitle"><?php eT("Check data integrity");?></h3>
+<?php
+/* @var $this AdminController */
+/* @var $dataProvider CActiveDataProvider */
+
+// DO NOT REMOVE This is for automated testing to validate we see that page
+echo viewHelper::getViewTestTag('checkIntegrity');
+
+?>
+<div class="pagetitle h3"><?php eT("Check data integrity");?></div>
 
 <div class="row" style="margin-bottom: 100px">
     <div class="col-lg-12">
@@ -160,6 +168,23 @@
                     <li><?php eT("All questions meet consistency standards."); ?></li><?php
                 } ?>
 
+                <?php if (isset($questionOrderDuplicates) && !empty($questionOrderDuplicates)): ?>
+                    <li><?php eT("The following surveys have an errorneous question order. Please go to each question and group respectively, check the question order and save it."); ?>
+                        <ul>
+                            <?php foreach ($questionOrderDuplicates as $info): ?>
+                            <li>
+                                SID: <a href="<?php echo $info['viewSurveyLink']; ?>"><?php echo $info['sid']; ?></a>
+                                GID: <a href="<?php echo $info['viewGroupLink']; ?>"><?php echo $info['gid']; ?></a>
+                                <?php if ($info['parent_qid'] != 0): ?>
+                                    Parent QID: <a href="<?php echo $info['questionSummaryLink']; ?>"><?php echo $info['parent_qid']; ?></a>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                <?php else: ?>
+                    <li><?php eT("No issues with question order found."); ?></li>
+                <?php endif; ?>
+
                 <?php
                     if (isset($groups))
                     {?>
@@ -177,6 +202,37 @@
                     { ?>
                     <li><?php eT("All groups meet consistency standards."); ?></li><?php
                 } ?>
+
+                <?php
+                if (isset($user_in_groups))
+                {?>
+                    <li><?php eT("The following user group assignments should be deleted:"); ?>
+                        <ul class="list-unstyled" >
+                            <?php
+                            foreach ($user_in_groups as $user_in_group) {?>
+                                <li>UID:<?php echo $user_in_group['uid'];?> UGID:<?php echo $user_in_group['ugid'];?> <?php eT("Reason:");?> <?php echo $user_in_group['reason'];?></li><?php
+                            }?>
+                        </ul>
+                    </li>
+                    <?php
+                }
+                else
+                { ?>
+                    <li><?php eT("All groups meet consistency standards."); ?></li><?php
+                } ?>
+
+                <?php if (isset($groupOrderDuplicates) && !empty($groupOrderDuplicates)): ?>
+                    <li><?php eT("The following surveys have an errorneous question group order. Please go to each survey respectively, check the group order and save it."); ?>
+                        <ul>
+                            <?php foreach ($groupOrderDuplicates as $info): ?>
+                            <li>
+                                SID: <a href="<?php echo $info['organizerLink']; ?>"><?php echo $info['sid']; ?></a>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                <?php else: ?>
+                    <li><?php eT("No issues with question group order found."); ?></li>
+                <?php endif; ?>
 
                 <?php
                     if (isset($orphansurveytables))
@@ -199,7 +255,7 @@
                 <?php
                     if (isset($orphantokentables))
                     {?>
-                    <li><?php eT("The following old token tables should be deleted because they contain no records or their parent survey no longer exists:"); ?>
+                    <li><?php eT("The following old survey participants tables should be deleted because they contain no records or their parent survey no longer exists:"); ?>
                         <ul class="list-unstyled" >
                             <?php
                                 foreach ($orphantokentables as $tokentable) {?>
@@ -211,7 +267,7 @@
                     }
                     else
                     { ?>
-                    <li><?php eT("All old token tables meet consistency standards."); ?></li><?php
+                    <li><?php eT("All old survey participants tables meet consistency standards."); ?></li><?php
                 } ?>
             </ul>
 
@@ -237,7 +293,7 @@
                 <br /> <?php eT("No database action required!"); ?>
                 <?php } else
                 {?>
-                <?php echo CHtml::form(array("admin/checkintegrity/fixredundancy"), 'post');?>
+                <?php echo CHtml::form(array("admin/checkintegrity",'sa'=>'fixredundancy'), 'post');?>
                     <ul class='data-redundancy-list list-unstyled'>
                         <?php
                             if (isset($redundantsurveytables))
@@ -256,7 +312,7 @@
                         <?php
                             if (isset($redundanttokentables) && count($redundanttokentables)>0)
                             {?>
-                            <li><?php eT("The following old token list tables exist and may be deleted if no longer required:"); ?>
+                            <li><?php eT("The following old participant tables exist and may be deleted if no longer required:"); ?>
                                 <ul class='token-tables-list list-unstyled'>
                                     <?php
                                         foreach ($redundanttokentables as $tokentable) {?>

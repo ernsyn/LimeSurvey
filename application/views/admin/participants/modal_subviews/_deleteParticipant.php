@@ -2,14 +2,14 @@
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
     <h4 class="modal-title" id="participant_edit_modal"><?php eT('Delete participant'); ?></h4>
 </div>
-<div class="modal-body form-horizontal">
+<div class="modal-body ">
 <?php
     $form = $this->beginWidget(
         'bootstrap.widgets.TbActiveForm',
         array(
             'id' => 'deleteParticipantActiveForm',
             'action' => array('admin/participants/sa/editValueParticipantPanel'),
-            'htmlOptions' => array('class' => 'form-horizontal'), // for inset effect
+            'htmlOptions' => array('class' => ''), // for inset effect
         )
     );
 ?>
@@ -18,7 +18,7 @@
     <p><?php eT("Please choose one option."); ?></p>
     <select name='selectedoption' class="form-control" >
         <option value="po" selected><?php eT("Delete only from the central panel") ?></option>
-        <option value="pt"><?php eT("Delete from the central panel and associated surveys") ?></option>
+        <option value="ptt"><?php eT("Delete from the central panel and associated surveys") ?></option>
         <option value="ptta"><?php eT("Delete from central panel, associated surveys and all associated responses") ?></option>
     </select>
 </div>

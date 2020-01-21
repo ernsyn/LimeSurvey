@@ -16,7 +16,7 @@
             'type'        => 'action',
             'action'      => 'delete',
             'url'         =>  App()->createUrl('/admin/responses/sa/actionDelete/surveyid/'.$_GET['surveyid']),
-            'iconClasses' => 'text-danger glyphicon glyphicon-trash',
+            'iconClasses' => 'text-danger fa fa-trash',
             'text'        =>  gT('Delete'),
             'grid-reload' => 'yes',
 
@@ -35,8 +35,8 @@
             'type'        => 'action',
             'action'      => 'deleteAttachments',
             //'url'         =>  App()->createUrl("admin/responses", array("sa"=>"actionDeleteAttachments")),
-            'url'         =>  App()->createUrl('/admin/responses/sa/actionDeleteAttachments/surveyid/'.$_GET['surveyid']),
-            'iconClasses' => 'text-danger glyphicon glyphicon-paperclip',
+            'url'         =>  App()->createUrl("/admin/responses/sa/actionDeleteAttachments/", array("surveyid" => $_GET['surveyid'] )),
+            'iconClasses' => 'text-danger fa fa-paperclip',
             'text'        =>  gT('Delete attachments'),
             'grid-reload' => 'yes',
 
@@ -63,6 +63,24 @@
             'grid-reload' => 'no',
 
             'actionType' => 'window-location-href'
+        );
+
+
+        // Export responses
+        $buttons[] = array(
+            // li element
+            'type'            => 'action',
+            'action'          => 'export',
+            'url'             =>  App()->createUrl('admin/export/sa/exportresults/surveyid/'.$_GET['surveyid']),
+            'iconClasses'     => 'fa fa-upload',
+            'text'            =>  gT('Export'),
+
+            'aLinkSpecificDatas'  => array(
+                'input-name'     => 'tokenids',
+            ),
+
+            // modal
+            'actionType'    => 'fill-session-and-redirect',
         );
 
     }

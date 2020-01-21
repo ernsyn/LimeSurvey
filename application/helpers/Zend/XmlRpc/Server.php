@@ -19,6 +19,7 @@
  * @license    http://framework.zend.com/license/new-bsd     New BSD License
  * @version    $Id: Server.php 23775 2011-03-01 17:25:24Z ralph $
  */
+use Zend_XmlRpc_Server_Exception;
 
 /**
  * Extends Zend_Server_Abstract
@@ -164,7 +165,6 @@ class Zend_XmlRpc_Server extends Zend_Server_Abstract
         'dateTime.iso8601'           => 'dateTime.iso8601',
         'date'                       => 'dateTime.iso8601',
         'time'                       => 'dateTime.iso8601',
-        'time'                       => 'dateTime.iso8601',
         'Zend_Date'                  => 'dateTime.iso8601',
         'DateTime'                   => 'dateTime.iso8601',
         'array'                      => 'array',
@@ -209,7 +209,7 @@ class Zend_XmlRpc_Server extends Zend_Server_Abstract
         $system = $this->getSystem();
         if (!method_exists($system, $method)) {
             require_once 'Zend/XmlRpc/Server/Exception.php';
-            throw new Zend_XmlRpc_Server_Exception('Unknown instance method called on server: ' . $method);
+            throw new Zend_XmlRpc_Server_Exception('Unknown instance method called on server: '.$method);
         }
         return call_user_func_array(array($system, $method), $params);
     }
@@ -365,7 +365,7 @@ class Zend_XmlRpc_Server extends Zend_Server_Abstract
                 $type = gettype($definition);
             }
             require_once 'Zend/XmlRpc/Server/Exception.php';
-            throw new Zend_XmlRpc_Server_Exception('Unable to load server definition; must be an array or Zend_Server_Definition, received ' . $type, 612);
+            throw new Zend_XmlRpc_Server_Exception('Unable to load server definition; must be an array or Zend_Server_Definition, received '.$type, 612);
         }
 
         $this->_table->clearMethods();
@@ -527,7 +527,7 @@ class Zend_XmlRpc_Server extends Zend_Server_Abstract
             return $this->_sendArgumentsToAllMethods;
         }
 
-        $this->_sendArgumentsToAllMethods = (bool)$flag;
+        $this->_sendArgumentsToAllMethods = (bool) $flag;
         return $this;
     }
 
@@ -550,7 +550,7 @@ class Zend_XmlRpc_Server extends Zend_Server_Abstract
      *
      * @param Zend_XmlRpc_Request $request
      * @return Zend_XmlRpc_Response
-     * @throws Zend_XmlRpcServer_Exception|Exception
+     * @throws Zend_XmlRpc_Server_Exception|Exception
      * Zend_XmlRpcServer_Exceptions are thrown for internal errors; otherwise,
      * any other exception may be thrown by the callback
      */
@@ -561,7 +561,7 @@ class Zend_XmlRpc_Server extends Zend_Server_Abstract
         // Check for valid method
         if (!$this->_table->hasMethod($method)) {
             require_once 'Zend/XmlRpc/Server/Exception.php';
-            throw new Zend_XmlRpc_Server_Exception('Method "' . $method . '" does not exist', 620);
+            throw new Zend_XmlRpc_Server_Exception('Method "'.$method.'" does not exist', 620);
         }
 
         $info     = $this->_table->getMethod($method);

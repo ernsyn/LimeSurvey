@@ -57,11 +57,14 @@
             // The error modal rendered if no item is selected in the grid
             $this->render('modals/first-select',array());
 
-            Yii::app()->getClientScript()->registerScriptFile(App()->getAssetManager()->publish(dirname(__FILE__) . '/assets/listActions.js'));
+            // Before, it was using: Yii::app()->getClientScript()->registerScriptFile(App()->getAssetManager()->publish(dirname(__FILE__) . '/assets/listActions.js'));
+            // Now, registerScriptFile will use or not the asset manager depending on context
+            Yii::app()->getClientScript()->registerScriptFile(Yii::app()->getConfig("extensionsurl").'admin/grid/MassiveActionsWidget/assets/listActions.js', LSYii_ClientScript::POS_BEGIN);
+
         }
 
         private function isView($display)
         {
-            return in_array($display, array('yes-no', 'empty'));
+            return in_array($display, array('yes-no', 'empty', 'yes-no-lg', 'empty-lg'));
         }
     }

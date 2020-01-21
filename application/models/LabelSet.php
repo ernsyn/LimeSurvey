@@ -1,4 +1,6 @@
-<?php if ( ! defined('BASEPATH')) die('No direct script access allowed');
+<?php if (!defined('BASEPATH')) {
+    die('No direct script access allowed');
+}
 /*
  * LimeSurvey (tm)
  * Copyright (C) 2011 The LimeSurvey Project Team / Carsten Schmitz
@@ -13,141 +15,165 @@
  *
  */
 
+/**
+ * Class LabelSet
+ *
+ * @property integer $lid ID (primary key)
+ * @property string $label_name Label Name (max 100 chars)
+ * @property string $languages
+ */
 class LabelSet extends LSActiveRecord
 {
-	/**
-	 * Returns the table's name
-	 *
-	 * @access public
-	 * @return string
-	 */
-	public function tableName()
-	{
-		return '{{labelsets}}';
-	}
+    /** @inheritdoc */
+    public function tableName()
+    {
+        return '{{labelsets}}';
+    }
 
-	/**
-	 * Returns the table's primary key
-	 *
-	 * @access public
-	 * @return string
-	 */
-	public function primaryKey()
-	{
-		return 'lid';
-	}
+    /** @inheritdoc */
+    public function primaryKey()
+    {
+        return 'lid';
+    }
 
-	/**
-	 * Returns the static model of Settings table
-	 *
-	 * @static
-	 * @access public
-     * @param string $class
-	 * @return CActiveRecord
-	 */
-	public static function model($class = __CLASS__)
-	{
-		return parent::model($class);
-	}
     /**
-    * Returns this model's validation rules
-    *
-    */
+     * @inheritdoc
+     * @return LabelSet
+     */
+    public static function model($class = __CLASS__)
+    {
+        /** @var self $model */
+        $model = parent::model($class);
+        return $model;
+    }
+
+    /** @inheritdoc */
     public function rules()
     {
         return array(
-            array('label_name','required'),
-            array('label_name','length', 'min' => 1, 'max'=>100),
-            array('label_name','LSYii_Validators'),
-            array('languages','required'),
-            array('languages','LSYii_Validators','isLanguageMulti'=>true),
+            array('label_name', 'required'),
+            array('label_name', 'length', 'min' => 1, 'max'=>100),
+            array('label_name', 'LSYii_Validators'),
+            array('languages', 'required'),
+            array('languages', 'LSYii_Validators', 'isLanguageMulti'=>true),
         );
     }
 
-	function getAllRecords($condition=FALSE)
-	{
-		if ($condition != FALSE)
-        {
-		    foreach ($condition as $item => $value)
-			{
-				$criteria->addCondition($item.'="'.$value.'"');
-			}
-        }
-
-		$data = $this->findAll($criteria);
-
-        return $data;
-	}
-
-    function getLID()
+    /** @inheritdoc */
+    public function relations()
     {
-		return Yii::app()->db->createCommand()->select('lid')->order('lid asc')->from('{{labelsets}}')->query()->readAll();
+        // NOTE: you may need to adjust the relation name and the related
+        // class name for the relations automatically generated below.
+        return array(
+            'labels' => array(self::HAS_MANY, 'Label', 'lid', 'order'=>'sortorder ASC')
+        );
     }
 
-	function insertRecords($data)
+    /**
+     * Recursively deletes a label set including labels and localizations
+     *
+     * @param integer $id The label set ID
+     *
+     * @return bool
+     * @throws CException
+     */
+    public function deleteLabelSet($id)
+    {
+        $arLabelSet = $this->findByPk($id);
+        if (empty($arLabelSet)) {
+            return false;
+        }
+        $oDB = App()->db;
+        $oTransaction = $oDB->beginTransaction();
+        try {
+            $this->deleteLabelsForLabelSet();
+
+            $bLabelSetDeleted = $arLabelSet->delete();
+            $oTransaction->commit();
+            return $bLabelSetDeleted;
+        } catch (Exception $e) {
+            $oTransaction->rollback();
+            return false;
+        }
+    }
+
+    /**
+     * @param $data
+     * @return bool|int
+     * @deprecated at 2018-01-29 use $model->attributes = $data && $model->save()
+     */
+    public function insertRecords($data)
     {
         $lblset = new self;
-		foreach ($data as $k => $v)
-			$lblset->$k = $v;
-		if ($lblset->save())
-        {
+        foreach ($data as $k => $v) {
+                    $lblset->$k = $v;
+        }
+        if ($lblset->save()) {
             return $lblset->lid;
         }
         return false;
     }
 
+    public function getLanguageArray() {
+        return explode(' ', $this->languages);
+    }
+
+    /**
+     * @return string
+     */
     public function getbuttons()
-        {
+    {
 
             // View labelset
-            $url = Yii::app()->createUrl("admin/labels/sa/view/lid/$this->lid");
-            $button = '<a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('View labels').'" href="'.$url.'" role="button"><span class="glyphicon glyphicon-list-alt" ></span></a>';
+            $url = Yii::app()->createUrl("admin/labels/sa/multieditor/lid/$this->lid");
+            $button = '<a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('View labels').'" href="'.$url.'" role="button"><span class="fa fa-list-alt" ></span></a>';
 
             // Edit labelset
-            if(Permission::model()->hasGlobalPermission('labelsets','update'))
-            {
-                $url = Yii::app()->createUrl("admin/labels/sa/editlabelset/lid/$this->lid");
-                $button .= ' <a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('Edit label set').'" href="'.$url.'" role="button"><span class="glyphicon glyphicon-pencil" ></span></a>';
+            if (Permission::model()->hasGlobalPermission('labelsets', 'update')) {
+                $url = Yii::app()->createUrl("admin/labels/sa/multieditor/lid/$this->lid");
+                $button .= ' <a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('Edit label set').'" href="'.$url.'" role="button"><span class="fa fa-pencil" ></span></a>';
             }
 
             // Export labelset
-            if(Permission::model()->hasGlobalPermission('labelsets','export'))
-            {
+            if (Permission::model()->hasGlobalPermission('labelsets', 'export')) {
                 $url = Yii::app()->createUrl("admin/export/sa/dumplabel/lid/$this->lid");
                 $button .= ' <a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('Export label set').'" href="'.$url.'" role="button"><span class="icon-export" ></span></a>';
             }
 
             // Delete labelset
-            if(Permission::model()->hasGlobalPermission('labelsets','delete'))
-            {
-                $url = Yii::app()->createUrl("admin/labels/sa/delete/lid/$this->lid");
-                $button .= ' <a class="btn btn-default list-btn" data-toggle="tooltip" data-placement="left" title="'.gT('Delete label set').'" href="'.$url.'" role="button" data-confirm="'.gT('Are you sure you want to delete this label set?').'"><span class="glyphicon glyphicon-trash text-warning"></span></a>';
+            if (Permission::model()->hasGlobalPermission('labelsets', 'delete')) {
+                $button .= '<a class="btn btn-default"  data-toggle="tooltip" title="'.gT("Delete label set").'" href="#" role="button"'
+                    ." onclick='$.bsconfirm(\"".CHtml::encode(gT("Are you sure you want to delete this label set?"))
+                                ."\", {\"confirm_ok\": \"".gT("Yes")."\", \"confirm_cancel\": \"".gT("No")."\"}, function() {"
+                                . convertGETtoPOST(Yii::app()->createUrl("admin/labels/sa/delete", ["lid" => $this->lid]))
+                            ."});'>"
+                        .' <i class="text-danger fa fa-trash"></i>
+                    </a>';
             }
-
             return $button;
         }
 
     public function search()
     {
-        $pageSize=Yii::app()->user->getState('pageSize',Yii::app()->params['defaultPageSize']);
+        $pageSize = Yii::app()->user->getState('pageSize', Yii::app()->params['defaultPageSize']);
 
         $sort = new CSort();
         $sort->attributes = array(
-          'labelset_id'=>array(
+            'labelset_id'=>array(
             'asc'=>'lid',
             'desc'=>'lid desc',
-          ),
-          'name'=>array(
+            ),
+            'name'=>array(
             'asc'=>'label_name',
             'desc'=>'label_name desc',
-          ),
-          'languages'=>array(
+            ),
+            'languages'=>array(
             'asc'=>'languages',
             'desc'=>'languages desc',
-          ),
+            ),
         );
 
-        $dataProvider=new CActiveDataProvider('LabelSet', array(
+        $dataProvider = new CActiveDataProvider('LabelSet', array(
             'sort'=>$sort,
             'pagination'=>array(
                 'pageSize'=>$pageSize,
@@ -155,5 +181,18 @@ class LabelSet extends LSActiveRecord
         ));
 
         return $dataProvider;
+    }
+
+    /**
+     * Delete all childs(Label and LabelL10n) for a LabelSet
+     */
+    public function deleteLabelsForLabelSet()
+    {
+        // delete old labels and translations before inserting the new values
+        foreach ($this->labels as $oLabel) {
+            LabelL10n::model()->deleteAllByAttributes([], 'id = :id', [':id' => $oLabel->id]);
+            $oLabel->delete();
+        }
+        rmdirr(App()->getConfig('uploaddir') . '/labels/' . $this->lid);
     }
 }

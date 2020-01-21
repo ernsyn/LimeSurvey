@@ -15,24 +15,28 @@
  *      perform an ajax request and close
  *      perform an ajax request and show the result in the modal
  */
-$(document).on('click', '.listActions a', function ()
-{
-    var $that          = $(this);                                                             // The cliked link
-    var $actionUrl     = $that.data('url');                                                   // The url of the Survey Controller action to call
-    var onSuccess      = $that.data('on-success');
-    var $gridid        = $('.listActions').data('grid-id');
-    var $oCheckedItems = $.fn.yiiGridView.getChecked($gridid, $('.listActions').data('pk')); // List of the clicked checkbox
-    var $oCheckedItems = JSON.stringify($oCheckedItems);
-    var actionType = $that.data('actionType');
-
-
-    if( $oCheckedItems == '[]' ) {
-        //If no item selected, the error modal "please select first an item" is shown
-        // TODO: add a variable in the widget to replace "item" by the item type (e.g: survey, question, token, etc.)
-        $('#error-first-select').modal();
+var onClickListAction =  function () {
+    if($(this).data('disabled')) {
         return;
     }
+    var $that          = $(this);                                                             // The clicked link
+    var $actionUrl     = $that.data('url');                                                   // The url of the Survey Controller action to call
+    var onSuccess      = $that.data('on-success');
+    var $gridid        = $('#'+$(this).closest('div.listActions').data('grid-id'));
+    var $grididvalue   = $gridid.attr('id');
+    var $oCheckedItems = $gridid.yiiGridView('getChecked', $(this).closest('div.listActions').data('pk')); // List of the clicked checkbox
+    var $oCheckedItems = JSON.stringify($oCheckedItems);
+    var actionType     = $that.data('actionType');   
+    var selectedList   = $(".selected-items-list");
 
+    if ($oCheckedItems == '[]') {
+        //If no item selected, the error modal "please select first an item" is shown
+        // TODO: add a variable in the widget to replace "item" by the item type (e.g: survey, question, token, etc.)
+        $('#error-first-select' + $grididvalue).modal();
+        return;
+    }
+    
+    
     // TODO : Switch action (post, session, ajax...)
 
     // For actions without modal, doing a redirection
@@ -41,7 +45,7 @@ $(document).on('click', '.listActions a', function ()
     // TODO : Switch case "redirection (with 2 type; post or fill session)"
     if(actionType == "redirect")
     {
-        $oCheckedItems = $.fn.yiiGridView.getChecked($gridid, $('.listActions').data('pk')); // So we can join
+        $oCheckedItems = $gridid.yiiGridView('getChecked', $('.listActions').data('pk')); // So we can join
         var newForm = jQuery('<form>', {
             'action': $actionUrl,
             'target': '_blank',
@@ -51,7 +55,7 @@ $(document).on('click', '.listActions a', function ()
             'value': $oCheckedItems.join("|"),
             'type': 'hidden'
         })).append(jQuery('<input>', {
-            'name': 'YII_CSRF_TOKEN',
+            'name': LS.data.csrfTokenName,
             'value': LS.data.csrfToken,
             'type': 'hidden'
         })).appendTo('body');
@@ -63,9 +67,12 @@ $(document).on('click', '.listActions a', function ()
     // Using session before redirect rather than form submission
     if(actionType == 'fill-session-and-redirect')
     {
-        // postUrl is defined as a var in the View
+        // postUrl is defined as a var in the View, if not the basic url is used
+        if(postUrl == undefined) {
+            var postUrl = $actionUrl;
+        } 
         $(this).load(postUrl, {
-            participantid:$oCheckedItems},function(){
+            itemsid:$oCheckedItems},function(){
                 $(location).attr('href',$actionUrl);
             });
         return;
@@ -73,7 +80,7 @@ $(document).on('click', '.listActions a', function ()
 
     // Set window location href. Used by download files in responses list view.
     if (actionType == 'window-location-href') {
-        var $oCheckedItems = $.fn.yiiGridView.getChecked($gridid, $('.listActions').data('pk')); // So we can join
+        var $oCheckedItems = $gridid.yiiGridView('getChecked', $('.listActions').data('pk')); // So we can join
         window.location.href = $actionUrl + $oCheckedItems.join(',');
         return;
     }
@@ -85,13 +92,13 @@ $(document).on('click', '.listActions a', function ()
     if (actionType == 'custom') {
         var js = $that.data('custom-js');
         var func = eval(js);
-        var itemIds = $.fn.yiiGridView.getChecked($gridid, $('.listActions').data('pk'));
+        var itemIds = $gridid.yiiGridView('getChecked', $('.listActions').data('pk'));
         func(itemIds);
         return;
     }
 
     // TODO: switch case "Modal"
-    var $modal  = $('#'+$that.data('modal-id'));   // massive-actions-modal-<?php $aAction['action'];?>-<?php echo $key; ?>
+    var $modal  = $('#'+$that.data('modal-id'));   // massive-actions-modal-<?php echo $this->gridid;?>-<?php $aAction['action'];?>-<?php echo $key; ?>
 
     // Needed modal elements
     var $modalTitle    = $modal.find('.modal-title');                   // Modal Title
@@ -105,6 +112,31 @@ $(document).on('click', '.listActions a', function ()
     var $oldModalTitle     = $modalTitle.text();
     var $oldModalBody      = $modalBody.html();
     var $oldModalButtons   = $modal.find('.modal-footer-buttons');     // Modal footer with yes/no buttons
+    var $modalShowSelected = $modal.data('show-selected');
+    var $modalSelectedUrl = $modal.data('selected-url');
+    
+    //Display selected data in modals after clicked on action
+    if($modalShowSelected == 'yes' && $modalSelectedUrl ){  
+        
+        //set csrfToken for ajaxpost
+        var csrfToken = $('meta[name="csrf-token"]').attr("content");
+        
+        //clear selected list view 
+        selectedList.empty();
+
+        //ajaxpost to set data in the selected items div 
+        $.ajax({
+            url :$modalSelectedUrl,
+            type : 'POST',
+            data : {$grididvalue, $oCheckedItems,csrfToken},
+            success: function(html, statut){    
+                selectedList.html(html);
+            },
+            error: function(requestObject, error, errorThrown){
+                    console.log(error);
+            }
+        });           
+    }
 
     // When user close the modal, we put it back to its original state
     $modal.on('hidden.bs.modal', function (e) {
@@ -115,9 +147,9 @@ $(document).on('click', '.listActions a', function ()
 
         if ($that.data('grid-reload') == "yes")
         {
-            $.fn.yiiGridView.update($gridid);                         // Update the surveys list
+            $gridid.yiiGridView('update');                         // Update the surveys list
             setTimeout(function(){
-                $('#'+$gridid).trigger("actions-updated");}, 500);    // Raise an event if some widgets inside the modals need some refresh (eg: position widget in question list)
+                $(document).trigger("actions-updated");}, 500);    // Raise an event if some widgets inside the modals need some refresh (eg: position widget in question list)
         }
 
     })
@@ -130,7 +162,14 @@ $(document).on('click', '.listActions a', function ()
         var $postDatas  = {sItems:$oCheckedItems};
         $modal.find('.custom-data').each(function(i, el)
         {
-            $postDatas[$(this).attr('name')]=$(this).val();
+            if ($(this).hasClass('btn-group')){ // yiiwheels.widgets.buttongroup.WhButtonGroup
+                $(this).find('input:checked').each(function(i, el)
+                {
+                    $postDatas[$(this).attr('name')]=$(this).val();
+                });
+            } else {
+                $postDatas[$(this).attr('name')]=$(this).val();
+            }
         });
 
         // Custom attributes to updates (like question attributes)
@@ -140,6 +179,7 @@ $(document).on('click', '.listActions a', function ()
             aAttributesToUpdate.push($(this).attr('name'));
         });
         $postDatas['aAttributesToUpdate'] = JSON.stringify(aAttributesToUpdate);
+        $postDatas['grididvalue'] = $grididvalue;
 
         $modal.find('input.post-value, select.post-value').each(function(i, el) {
             $postDatas[$(el).attr('name')] = $(el).val();
@@ -151,6 +191,7 @@ $(document).on('click', '.listActions a', function ()
         $oldModalButtons.hide();                                    // Hide the 'Yes/No' buttons
         $modalClose.show();                                         // Show the 'close' button
         $ajaxLoader.show();                                         // Show the ajax loader
+        selectedList.empty();                                       //clear selected Item list
 
         // Ajax request
         $.ajax({
@@ -173,7 +214,7 @@ $(document).on('click', '.listActions a', function ()
                 }
 
                 if (html.ajaxHelper) {
-                    LS.ajaxHelperOnSuccess(html);
+                    LS.AjaxHelper.onSuccess(html);
                     return;
                 }
 
@@ -193,7 +234,7 @@ $(document).on('click', '.listActions a', function ()
 
     // open the modal
     $modal.modal();
-});
+};
 
 /**
  * Bootstrap switch extension
@@ -248,18 +289,24 @@ function prepareBsSwitchInteger($gridid){
 
 function prepareBsDateTimePicker($gridid){
     var dateTimeSettings = getDefaultDateTimePickerSettings();
-    var dateTimeFormat = dateTimeSettings.dateformatsettings.jsdate+ ' HH:mm';
-    $('.date input').each(function(){
-        $(this).datetimepicker({
-            format: dateTimeFormat,
-            showClear: dateTimeSettings.showClear,
-            allowInputToggle: dateTimeSettings.allowInputToggle,
-        });
+    if (dateTimeSettings) {
+        var dateTimeFormat = dateTimeSettings.dateformatsettings.jsdate+ ' HH:mm';
+        $('.date input').each(function(){
+            $(this).datetimepicker({
+                format: dateTimeFormat,
+                showClear: dateTimeSettings.showClear,
+                allowInputToggle: dateTimeSettings.allowInputToggle,
+            });
     });
-
+    }
 }
+
 // get user session datetimesettings
 function getDefaultDateTimePickerSettings() {
+    // TODO: Code below can't handle if installation is in a subfolder (not web root).
+    // The correct solution is to fetch datetime format from an <input> element.
+    return null;
+
     //Switch between path and get based routing
     if(/\/index\.php(\/)?\?r=admin/.test(window.location.href)){
         var url = "/index.php?r=admin/survey&sa=datetimesettings";
@@ -276,17 +323,23 @@ function getDefaultDateTimePickerSettings() {
     return mydata;
 }
 
+function bindListItemclick(){
+    $( '.listActions a').off('click.listactions').on('click.listactions', onClickListAction);
+    $( '.listActions .disabled a').off('click.listactions').on('click.listactions', function(e){ e.preventDefault(); });
+}
 
-$(document).ready(function() {
 
+$(document).off('pjax:scriptcomplete.listActions').on('pjax:scriptcomplete.listActions, ready ', function() {
     prepareBsSwitchBoolean(gridId);
     prepareBsSwitchInteger(gridId);
 
-
     // Grid refresh: see point 3
-    $(document).on('actions-updated', '#'+gridId,  function(){
+    $(document).on('actions-updated', function(){
         prepareBsSwitchBoolean(gridId);
         prepareBsSwitchInteger(gridId);
         prepareBsDateTimePicker(gridId);
+        bindListItemclick();
     });
+    bindListItemclick();
 });
+

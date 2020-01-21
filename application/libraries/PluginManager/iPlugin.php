@@ -1,6 +1,9 @@
 <?php
-namespace ls\pluginmanager;
-interface iPlugin {
+
+namespace LimeSurvey\PluginManager;
+
+interface iPlugin
+{
 
     /**
      * Should return the description for this plugin
@@ -8,7 +11,7 @@ interface iPlugin {
      * @param PluginManager $manager    The plugin manager instantiating the object
      * @param int           $id         The id for storage
      */
-    public function __construct(\PluginManager $manager, $id);
+    public function __construct(PluginManager $manager, $id);
 
     /**
      * Return the description for this plugin
@@ -53,7 +56,7 @@ interface iPlugin {
      * 
      * Assumes an array with valid key/value pairs is passed.
      * 
-     * @param array $aSettings An array with key/value pairs for all plugin settings
+     * @param array<string, mixed> $aSettings An array with key/value pairs for all plugin settings
      */
     public function saveSettings($aSettings);
     
@@ -64,5 +67,5 @@ interface iPlugin {
      * @param PluginEvent $event
      * @return PluginBase
      */
-   public function setEvent(PluginEvent $event);
+    public function setEvent(PluginEvent $event);
 }

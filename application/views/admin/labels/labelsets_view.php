@@ -1,14 +1,18 @@
 <?php
 /**
  * This file render the list of label sets
- * It use the Label Sets model getAllRecords method to build the data provider.
  *
- * @var $model  obj    the LabelSets model
+ * @var $this AdminController
+ * @var LabelSet $model the LabelSets model
  */
+
+// DO NOT REMOVE This is for automated testing to validate we see that page
+echo viewHelper::getViewTestTag('viewLabelSets');
+
 ?>
 <?php $pageSize=Yii::app()->user->getState('pageSize',Yii::app()->params['defaultPageSize']);?>
 <div class="col-lg-12">
-	<h3><?php eT('Label sets list'); ?></h3>
+	<div class="pagetitle h3"><?php eT('Label sets list'); ?></div>
 
 	<div class="row">
         <div class="col-lg-12 content-right">
@@ -28,7 +32,7 @@
 
                     'columns' => array(
 
-                    	array(
+                        array(
                             'header' => gT('Label set ID'),
                             'name' => 'labelset_id',
                             'value'=>'$data->lid',
@@ -55,14 +59,14 @@
                             'name'=>'actions',
                             'type'=>'raw',
                             'value'=>'$data->buttons',
-                            'htmlOptions' => array('class' => 'col-md-2 col-xs-1 text-right'),
+                            'htmlOptions' => array('class' => 'col-md-2 col-xs-1 text-right button-column'),
                         ),
 
                     ),
 
                     'htmlOptions'=>array('style'=>'cursor: pointer;', 'class'=>'hoverAction'),
-                    'selectionChanged'=>"function(id){window.location='" . Yii::app()->urlManager->createUrl('admin/labels/sa/view/lid' ) . '/' . "' + $.fn.yiiGridView.getSelection(id.split(',', 1));}",
-                    'ajaxUpdate' => true,
+                    'selectionChanged'=>"function(id){window.location='" . Yii::app()->urlManager->createUrl('admin/labels/sa/multieditor/lid' ) . '/' . "' + $.fn.yiiGridView.getSelection(id.split(',', 1));}",
+                    'ajaxUpdate' => 'labelsets-grid',
                    ));
             ?>
         </div>
